@@ -5,44 +5,44 @@ use crate::util::cn_from_bytes;
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct MIR {
-    setup_t: u32,
-    start_t: u32,
-    stat_num: u8,
-    mode_cod: char,
-    rtst_cod: char,
-    prot_cod: char,
-    burn_tim: u16,
-    cmod_cod: char,
-    lot_id: String,
-    part_typ: String,
-    node_nam: String,
-    tstr_typ: String,
-    job_nam: String,
-    job_rev: String,
-    sblot_id: String,
-    oper_nam: String,
-    exec_typ: String,
-    exec_ver: String,
-    test_cod: String,
-    tst_temp: String,
-    user_txt: String,
-    aux_file: String,
-    pkg_typ: String,
-    famly_id: String,
-    date_cod: String,
-    facil_id: String,
-    floor_id: String,
-    proc_id: String,
-    oper_frq: String,
-    spec_nam: String,
-    spec_ver: String,
-    flow_id: String,
-    setup_id: String,
-    dsgn_rev: String,
-    eng_id: String,
-    rom_cod: String,
-    serl_num: String,
-    supr_nam: String,
+    pub setup_t: u32,
+    pub start_t: u32,
+    pub stat_num: u8,
+    pub mode_cod: char,
+    pub rtst_cod: char,
+    pub prot_cod: char,
+    pub burn_tim: u16,
+    pub cmod_cod: char,
+    pub lot_id: String,
+    pub part_typ: String,
+    pub node_nam: String,
+    pub tstr_typ: String,
+    pub job_nam: String,
+    pub job_rev: String,
+    pub sblot_id: String,
+    pub oper_nam: String,
+    pub exec_typ: String,
+    pub exec_ver: String,
+    pub test_cod: String,
+    pub tst_temp: String,
+    pub user_txt: String,
+    pub aux_file: String,
+    pub pkg_typ: String,
+    pub famly_id: String,
+    pub date_cod: String,
+    pub facil_id: String,
+    pub floor_id: String,
+    pub proc_id: String,
+    pub oper_frq: String,
+    pub spec_nam: String,
+    pub spec_ver: String,
+    pub flow_id: String,
+    pub setup_id: String,
+    pub dsgn_rev: String,
+    pub eng_id: String,
+    pub rom_cod: String,
+    pub serl_num: String,
+    pub supr_nam: String,
 }
 
 impl MIR {
@@ -164,26 +164,26 @@ impl MIR {
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct SDR {
-    head_num: u8,
-    site_grp: u8,
-    site_cnt: u8,
-    site_num: Vec<u8>,
-    hand_typ: String,
-    hand_id: String,
-    card_typ: String,
-    card_id: String,
-    load_typ: String,
-    load_id: String,
-    dib_typ: String,
-    dib_id: String,
-    cabl_typ: String,
-    cabl_id: String,
-    cont_typ: String,
-    cont_id: String,
-    lasr_typ: String,
-    lasr_id: String,
-    extr_typ: String,
-    extr_i: String,
+    pub head_num: u8,
+    pub site_grp: u8,
+    pub site_cnt: u8,
+    pub site_num: Vec<u8>,
+    pub hand_typ: String,
+    pub hand_id: String,
+    pub card_typ: String,
+    pub card_id: String,
+    pub load_typ: String,
+    pub load_id: String,
+    pub dib_typ: String,
+    pub dib_id: String,
+    pub cabl_typ: String,
+    pub cabl_id: String,
+    pub cont_typ: String,
+    pub cont_id: String,
+    pub lasr_typ: String,
+    pub lasr_id: String,
+    pub extr_typ: String,
+    pub extr_i: String,
 }
 
 impl SDR {
@@ -256,22 +256,22 @@ impl SDR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct TSR {
-    head_num: u8,
-    site_num: u8,
-    test_typ: char,
-    test_num: u32,
-    exec_cnt: u32,
-    fail_cnt: u32,
-    alrm_cnt: u32,
-    test_nam: String,
-    seq_name: String,
-    test_lbl: String,
-    opt_flag: u8,
-    test_tim: f32,
-    test_min: f32,
-    test_max: f32,
-    tst_sums: f32,
-    tst_sqrs: f32,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub test_typ: char,
+    pub test_num: u32,
+    pub exec_cnt: u32,
+    pub fail_cnt: u32,
+    pub alrm_cnt: u32,
+    pub test_nam: String,
+    pub seq_name: String,
+    pub test_lbl: String,
+    pub opt_flag: u8,
+    pub test_tim: f32,
+    pub test_min: f32,
+    pub test_max: f32,
+    pub tst_sums: f32,
+    pub tst_sqrs: f32,
 }
 
 impl TSR {
@@ -324,12 +324,12 @@ impl TSR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct SBR {
-    head_num: u8,
-    site_num: u8,
-    sbin_num: u16,
-    sbin_cnt: u32,
-    sbin_pf: char,
-    sbin_nam: String,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub sbin_num: u16,
+    pub sbin_cnt: u32,
+    pub sbin_pf: char,
+    pub sbin_nam: String,
 }
 
 impl SBR {
@@ -357,10 +357,10 @@ impl SBR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WIR {
-    head_num: u8,
-    site_grp: u8,
-    start_t: u32,
-    wafer_id: String,
+    pub head_num: u8,
+    pub site_grp: u8,
+    pub start_t: u32,
+    pub wafer_id: String,
 }
 
 impl WIR {
@@ -384,20 +384,20 @@ impl WIR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WRR {
-    head_num: u8,
-    site_grp: u8,
-    finish_t: u32,
-    part_cnt: u32,
-    rtst_cnt: u32,
-    abrt_cnt: u32,
-    good_cnt: u32,
-    func_cnt: u32,
-    wafer_id: String,
-    fabwf_id: String,
-    frame_id: String,
-    mask_id: String,
-    usr_desc: String,
-    exc_desc: String,
+    pub head_num: u8,
+    pub site_grp: u8,
+    pub finish_t: u32,
+    pub part_cnt: u32,
+    pub rtst_cnt: u32,
+    pub abrt_cnt: u32,
+    pub good_cnt: u32,
+    pub func_cnt: u32,
+    pub wafer_id: String,
+    pub fabwf_id: String,
+    pub frame_id: String,
+    pub mask_id: String,
+    pub usr_desc: String,
+    pub exc_desc: String,
 }
 
 impl WRR {
@@ -447,12 +447,12 @@ impl WRR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct HBR {
-    head_num: u8,
-    site_num: u8,
-    hbin_num: u16,
-    hbin_cnt: u32,
-    hbin_pf: char,
-    hbin_nam: String,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub hbin_num: u16,
+    pub hbin_cnt: u32,
+    pub hbin_pf: char,
+    pub hbin_nam: String,
 }
 
 impl HBR {
@@ -480,13 +480,13 @@ impl HBR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PCR {
-    head_num: u8,
-    site_num: u8,
-    part_cnt: u32,
-    rtst_cnt: u32,
-    abrt_cnt: u32,
-    good_cnt: u32,
-    func_cnt: u32,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub part_cnt: u32,
+    pub rtst_cnt: u32,
+    pub abrt_cnt: u32,
+    pub good_cnt: u32,
+    pub func_cnt: u32,
 }
 
 impl PCR {
@@ -516,8 +516,8 @@ impl PCR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PIR {
-    head_num: u8,
-    site_num: u8,
+    pub head_num: u8,
+    pub site_num: u8,
 }
 
 impl PIR {
@@ -534,18 +534,18 @@ impl PIR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PRR {
-    head_num: u8,
-    site_num: u8,
-    part_flg: u8,
-    num_test: u16,
-    hard_bin: u16,
-    soft_bin: u16,
-    x_coord: i16,
-    y_coord: i16,
-    test_t: u32,
-    part_id: String,
-    part_txt: String,
-    part_fix: Vec<u8>,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub part_flg: u8,
+    pub num_test: u16,
+    pub hard_bin: u16,
+    pub soft_bin: u16,
+    pub x_coord: i16,
+    pub y_coord: i16,
+    pub test_t: u32,
+    pub part_id: String,
+    pub part_txt: String,
+    pub part_fix: Vec<u8>,
 }
 
 impl PRR {
@@ -554,9 +554,6 @@ impl PRR {
         let head_num = contents[0];
         let site_num = contents[1];
         let part_flg = contents[2];
-        //let num_test = from_bytes_le_2(&contents[3..5].try_into().unwrap());
-        //let hard_bin = from_bytes_le_2(&contents[5..7].try_into().unwrap());
-        //let soft_bin = from_bytes_le_2(&contents[7..9].try_into().unwrap());
         let num_test = u16::from_le_bytes(contents[3..5].try_into().unwrap());
         let hard_bin = u16::from_le_bytes(contents[5..7].try_into().unwrap());
         let soft_bin = u16::from_le_bytes(contents[7..9].try_into().unwrap());
@@ -590,10 +587,10 @@ impl PRR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct MRR {
-    finish_t: u32,
-    disp_cod: char,
-    usr_desc: String,
-    exc_desc: String,
+    pub finish_t: u32,
+    pub disp_cod: char,
+    pub usr_desc: String,
+    pub exc_desc: String,
 }
 
 impl MRR {
@@ -618,26 +615,26 @@ impl MRR {
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PTR {
-    test_num: u32,
-    head_num: u8,
-    site_num: u8,
-    test_flg: u8,
-    parm_flg: u8,
-    result: f32,
-    test_txt: String,
-    alarm_id: String,
-    opt_flag: u8,
-    res_scal: i8,
-    llm_scal: i8,
-    hlm_scal: i8,
-    lo_limit: f32,
-    hi_limit: f32,
-    units: String,
-    c_resfmt: String,
-    c_llmfmt: String,
-    c_hlmfmt: String,
-    lo_spec: f32,
-    hi_spec: f32,
+    pub test_num: u32,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub test_flg: u8,
+    pub parm_flg: u8,
+    pub result: f32,
+    pub test_txt: String,
+    pub alarm_id: String,
+    pub opt_flag: u8,
+    pub res_scal: i8,
+    pub llm_scal: i8,
+    pub hlm_scal: i8,
+    pub lo_limit: f32,
+    pub hi_limit: f32,
+    pub units: String,
+    pub c_resfmt: String,
+    pub c_llmfmt: String,
+    pub c_hlmfmt: String,
+    pub lo_spec: f32,
+    pub hi_spec: f32,
 }
 
 impl PTR {
@@ -666,7 +663,7 @@ impl PTR {
         let c_hlmfmt;
         let lo_spec;
         let hi_spec;
-        if offset >= record.contents.len() {
+        if offset < record.contents.len() {
             opt_flag = contents[offset];
             offset += 1;
             res_scal = i8::from_le_bytes(contents[offset..offset + 1].try_into().unwrap());

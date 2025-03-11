@@ -25,6 +25,8 @@ pub enum RecordType {
     EPS,
     GDR,
     DTR,
+    PSR,
+    VUR,
     InvalidRecord,
 }
 
@@ -34,6 +36,7 @@ impl RecordType {
             0 => match rec_sub {
                 10 => Self::FAR,
                 20 => Self::ATR,
+                30 => Self::VUR,
                 _ => Self::InvalidRecord,
             },
             1 => match rec_sub {
@@ -47,6 +50,7 @@ impl RecordType {
                 63 => Self::PLR,
                 70 => Self::RDR,
                 80 => Self::SDR,
+                90 => Self::PSR,
                 _ => Self::InvalidRecord,
             },
             2 => match rec_sub {

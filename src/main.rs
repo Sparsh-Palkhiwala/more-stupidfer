@@ -30,7 +30,10 @@ fn main() -> std::io::Result<()> {
             if let Record::PIR(_) = resolved {
                 continue;
             }
-            //if let Record::PRR(_) = resolved {
+            if let Record::PRR(_) = resolved {
+                continue;
+            }
+            //if let Record::PTR(_) = resolved {
             //    continue;
             //}
             println!("{resolved:#?}");
