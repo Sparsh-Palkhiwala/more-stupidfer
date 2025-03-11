@@ -1,7 +1,6 @@
 use crate::records::records::*;
 use std::{
     collections::HashMap,
-    f32,
     fs::File,
     io::{self, BufReader, Read},
 };
@@ -127,73 +126,4 @@ impl RecordSummary {
         let count = self.counts.entry(raw_record.rtype).or_insert(0);
         *count += 1;
     }
-}
-
-#[derive(Debug)]
-pub struct TestInformation {
-    pub test_type: TestType,
-    pub execution_count: u32,
-    pub test_name: String,
-    pub sequence_name: String,
-    pub test_label: String,
-    pub test_time: f32,
-    pub test_text: String,
-    pub low_limit: f32,
-    pub high_limit: f32,
-    pub units: String,
-}
-
-impl TestInformation {
-    pub fn new(tsr: &TSR) -> Self {
-        let test_type = match tsr.test_typ {
-            'P' => TestType::P,
-            'F' => TestType::F,
-            'M' => TestType::M,
-            'S' => TestType::S,
-            _ => TestType::Unknown,
-        };
-        let execution_count = tsr.exec_cnt;
-        let test_name = tsr.test_nam.clone();
-        let sequence_name = tsr.seq_name.clone();
-        let test_label = tsr.test_lbl.clone();
-        let test_time = tsr.test_tim;
-        let test_text = String::new();
-        let low_limit = f32::NAN;
-        let high_limit = f32::NAN;
-        let units = String::new();
-
-        Self {
-            test_type,
-            execution_count,
-            test_name,
-            sequence_name,
-            test_label,
-            test_time,
-            test_text,
-            low_limit,
-            high_limit,
-            units,
-        }
-    }
-
-    pub fn add_from_ptr(&mut self, ptr: &PTR) {
-        self.test_text = ptr.test_txt.clone();
-        self.low_limit = ptr.lo_limit;
-        self.high_limit = ptr.hi_limit;
-        self.units = ptr.units.clone();
-    }
-}
-
-#[derive(Debug)]
-pub enum TestType {
-    P,
-    F,
-    M,
-    S,
-    Unknown,
-}
-
-#[derive(Debug)]
-pub struct PartData {
-    data: HashMap<String, Vec<f32>>,
 }

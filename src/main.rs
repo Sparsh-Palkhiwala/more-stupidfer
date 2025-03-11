@@ -1,6 +1,7 @@
 use std::env;
 
 use stupidf::records::{RecordSummary, Records, records::Record};
+use stupidf::test_information::FullTestInformation;
 
 fn main() -> std::io::Result<()> {
     //let bytes = vec![3, 70, 65, 82, 5, 104, 101, 108, 108, 111];
@@ -14,6 +15,7 @@ fn main() -> std::io::Result<()> {
     let records = Records::new(&fname)?;
 
     let mut summary = RecordSummary::new();
+    let mut test_info = FullTestInformation::new();
     //for record in records.take(5) {
     for record in records {
         summary.add(&record);
@@ -24,8 +26,10 @@ fn main() -> std::io::Result<()> {
                 "{}.{} (0x{:x} @ 0x{:x}): {:?}",
                 header.rec_typ, header.rec_sub, header.rec_len, record.offset, record.rtype
             );
-            if let Record::TSR(_) = resolved {
-                continue;
+            if let Record::TSR(ref tsr) = resolved {
+                //let test_information = TestInformation::new_from_tsr(tsr);
+                test_info.add_from_tsr(&tsr);
+                //println!("{test_information:#?}");
             }
             if let Record::PIR(_) = resolved {
                 continue;
@@ -33,12 +37,13 @@ fn main() -> std::io::Result<()> {
             if let Record::PRR(_) = resolved {
                 continue;
             }
-            //if let Record::PTR(_) = resolved {
-            //    continue;
-            //}
+            if let Record::PTR(ref ptr) = resolved {
+                test_info.add_from_ptr(&ptr);
+            }
             println!("{resolved:#?}");
         }
     }
     println!("{summary:#?}");
+    println!("{test_info:#?}");
     Ok(())
 }
