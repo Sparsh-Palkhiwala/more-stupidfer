@@ -127,3 +127,11 @@ impl RecordSummary {
         *count += 1;
     }
 }
+
+impl IntoIterator for RecordSummary {
+    type Item = (RecordType, i32);
+    type IntoIter = <HashMap<RecordType, i32> as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        self.counts.into_iter()
+    }
+}

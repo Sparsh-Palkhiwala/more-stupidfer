@@ -144,7 +144,7 @@ impl TestInformation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TestType {
     P,
     F,
@@ -173,10 +173,106 @@ impl FullTestInformation {
     }
 
     pub fn add_from_tsr(&mut self, tsr: &TSR) {
+        if tsr.head_num == 255 {
+            return;
+        }
         let key = (tsr.test_num, tsr.site_num, tsr.head_num);
         self.test_infos
             .entry(key)
             .and_modify(|e| e.add_from_tsr(tsr))
             .or_insert(TestInformation::new_from_tsr(tsr));
+    }
+
+    pub fn merge(&self) -> FullMergedTestInformation {
+        let mut merged_test_info = FullMergedTestInformation::new();
+        for ti in self.test_infos.values() {
+            merged_test_info.add_from_test_information(ti);
+        }
+        merged_test_info
+    }
+}
+
+impl IntoIterator for FullTestInformation {
+    type Item = ((u32, u8, u8), TestInformation);
+    type IntoIter = <HashMap<(u32, u8, u8), TestInformation> as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        self.test_infos.into_iter()
+    }
+}
+
+//impl<'a> IntoIterator for &'a FullTestInformation {
+//    type Item = ((u32, u8, u8), &'a TestInformation);
+//    type IntoIter = <HashMap<(u32, u8, u8), &'a TestInformation> as IntoIterator>::IntoIter;
+//    fn into_iter(self) -> Self::IntoIter {
+//        self.test_infos.iter()
+//    }
+//}
+
+#[derive(Debug)]
+pub struct MergedTestInformation {
+    pub test_num: u32,
+    pub test_type: TestType,
+    pub execution_count: u32,
+    pub test_name: String,
+    pub sequence_name: String,
+    pub test_label: String,
+    pub test_time: f32,
+    pub test_text: String,
+    pub low_limit: f32,
+    pub high_limit: f32,
+    pub units: String,
+}
+impl MergedTestInformation {
+    pub fn new_from_test_information(test_information: &TestInformation) -> Self {
+        let test_num = test_information.test_num;
+        let test_type = test_information.test_type.clone();
+        let execution_count = test_information.execution_count;
+        let test_name = test_information.test_name.clone();
+        let sequence_name = test_information.sequence_name.clone();
+        let test_label = test_information.test_label.clone();
+        let test_time = test_information.test_time;
+        let test_text = test_information.test_text.clone();
+        let low_limit = test_information.low_limit;
+        let high_limit = test_information.high_limit;
+        let units = test_information.units.clone();
+        Self {
+            test_num,
+            test_type,
+            execution_count,
+            test_name,
+            sequence_name,
+            test_label,
+            test_time,
+            test_text,
+            low_limit,
+            high_limit,
+            units,
+        }
+    }
+    pub fn add(&mut self, test_information: &TestInformation) {
+        if self.test_num != test_information.test_num {
+            panic!("TestInformation.test_num does not match that of MergedTestInformation!")
+        }
+        self.execution_count += test_information.execution_count;
+    }
+}
+
+#[derive(Debug)]
+pub struct FullMergedTestInformation {
+    pub test_infos: HashMap<u32, MergedTestInformation>,
+}
+impl FullMergedTestInformation {
+    pub fn new() -> Self {
+        let test_infos = HashMap::new();
+        Self { test_infos }
+    }
+    pub fn add_from_test_information(&mut self, test_information: &TestInformation) {
+        let key = test_information.test_num;
+        self.test_infos
+            .entry(key)
+            .and_modify(|e| e.add(test_information))
+            .or_insert(MergedTestInformation::new_from_test_information(
+                test_information,
+            ));
     }
 }
