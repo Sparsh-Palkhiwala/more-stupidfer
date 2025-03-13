@@ -32,7 +32,7 @@ impl Row {
             site_num: pir.site_num,
             sbin: 0,
             hbin: 0,
-            results: vec![0.; num_tests as usize],
+            results: vec![f32::NAN; num_tests as usize],
         }
     }
 }

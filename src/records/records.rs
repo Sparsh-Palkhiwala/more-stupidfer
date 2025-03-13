@@ -1,6 +1,5 @@
 use crate::records::RawRecord;
-use crate::util::bn_from_bytes;
-use crate::util::cn_from_bytes;
+use crate::util::*;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -48,75 +47,45 @@ pub struct MIR {
 impl MIR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let setup_t = u32::from_le_bytes(contents[..4].try_into().unwrap());
-        let start_t = u32::from_le_bytes(contents[4..8].try_into().unwrap());
-        let stat_num = contents[8];
-        let mode_cod: char = char::from_u32(contents[9] as u32).expect("Invalid MIR.MODE_COD");
-        let rtst_cod: char = char::from_u32(contents[10] as u32).expect("Invalid MIR.RTST_COD");
-        let prot_cod: char = char::from_u32(contents[11] as u32).expect("Invalid MIR.PROT_COD");
-        let burn_tim: u16 = u16::from_le_bytes(contents[12..14].try_into().unwrap());
-        let cmod_cod: char = char::from_u32(contents[14] as u32).expect("Invalid MIR.CMOD_COD");
-
-        let mut offset: usize = 15;
-        let lot_id = cn_from_bytes(contents, offset).expect("Invalid MIR.LOT_ID");
-        offset += lot_id.len() + 1;
-        let part_typ = cn_from_bytes(contents, offset).expect("Invalid MIR.PART_TYP");
-        offset += part_typ.len() + 1;
-        let node_nam = cn_from_bytes(contents, offset).expect("Invalid MIR.NODE_NAM");
-        offset += node_nam.len() + 1;
-        let tstr_typ = cn_from_bytes(contents, offset).expect("Invalid MIR.NODE_NAM");
-        offset += tstr_typ.len() + 1;
-        let job_nam = cn_from_bytes(contents, offset).expect("Invalid MIR.job_nam");
-        offset += job_nam.len() + 1;
-        let job_rev = cn_from_bytes(contents, offset).expect("Invalid MIR.NODE_NAM");
-        offset += job_rev.len() + 1;
-        let sblot_id = cn_from_bytes(contents, offset).expect("Invalid MIR.NODE_NAM");
-        offset += sblot_id.len() + 1;
-        let oper_nam = cn_from_bytes(contents, offset).expect("Invalid MIR.NODE_NAM");
-        offset += oper_nam.len() + 1;
-        let exec_typ = cn_from_bytes(contents, offset).expect("Invalid MIR.NODE_NAM");
-        offset += exec_typ.len() + 1;
-        let exec_ver = cn_from_bytes(contents, offset).expect("Invalid MIR.EXEC_VER");
-        offset += exec_ver.len() + 1;
-        let test_cod = cn_from_bytes(contents, offset).expect("Invalid MIR.TEST_COD");
-        offset += test_cod.len() + 1;
-        let tst_temp = cn_from_bytes(contents, offset).expect("Invalid MIR.TST_TEMP");
-        offset += tst_temp.len() + 1;
-        let user_txt = cn_from_bytes(contents, offset).expect("Invalid MIR.USER_TXT");
-        offset += user_txt.len() + 1;
-        let aux_file = cn_from_bytes(contents, offset).expect("Invalid MIR.AUX_FILE");
-        offset += aux_file.len() + 1;
-        let pkg_typ = cn_from_bytes(contents, offset).expect("Invalid MIR.PKG_TYP");
-        offset += pkg_typ.len() + 1;
-        let famly_id = cn_from_bytes(contents, offset).expect("Invalid MIR.FAMLY_ID");
-        offset += famly_id.len() + 1;
-        let date_cod = cn_from_bytes(contents, offset).expect("Invalid MIR.DATE_COD");
-        offset += date_cod.len() + 1;
-        let facil_id = cn_from_bytes(contents, offset).expect("Invalid MIR.FACIL_ID");
-        offset += facil_id.len() + 1;
-        let floor_id = cn_from_bytes(contents, offset).expect("Invalid MIR.FLOOR_ID");
-        offset += floor_id.len() + 1;
-        let proc_id = cn_from_bytes(contents, offset).expect("Invalid MIR.PROC_ID");
-        offset += proc_id.len() + 1;
-        let oper_frq = cn_from_bytes(contents, offset).expect("Invalid MIR.OPER_FRQ");
-        offset += oper_frq.len() + 1;
-        let spec_nam = cn_from_bytes(contents, offset).expect("Invalid MIR.SPEC_NAM");
-        offset += spec_nam.len() + 1;
-        let spec_ver = cn_from_bytes(contents, offset).expect("Invalid MIR.SPEC_VER");
-        offset += spec_ver.len() + 1;
-        let flow_id = cn_from_bytes(contents, offset).expect("Invalid MIR.FLOW_ID");
-        offset += flow_id.len() + 1;
-        let setup_id = cn_from_bytes(contents, offset).expect("Invalid MIR.SETUP_ID");
-        offset += setup_id.len() + 1;
-        let dsgn_rev = cn_from_bytes(contents, offset).expect("Invalid MIR.DSGN_REV");
-        offset += dsgn_rev.len() + 1;
-        let eng_id = cn_from_bytes(contents, offset).expect("Invalid MIR.ENG_ID");
-        offset += eng_id.len() + 1;
-        let rom_cod = cn_from_bytes(contents, offset).expect("Invalid MIR.ROM_COD");
-        offset += rom_cod.len() + 1;
-        let serl_num = cn_from_bytes(contents, offset).expect("Invalid MIR.SERL_NUM");
-        offset += serl_num.len() + 1;
-        let supr_nam = cn_from_bytes(contents, offset).expect("Invalid MIR.SUPR_NAM");
+        let mut offset: usize = 0;
+        let setup_t = U4(contents, &mut offset);
+        let start_t = U4(contents, &mut offset);
+        let stat_num = U1(contents, &mut offset);
+        let mode_cod = C1(contents, &mut offset);
+        let rtst_cod = C1(contents, &mut offset);
+        let prot_cod = C1(contents, &mut offset);
+        let burn_tim = U2(contents, &mut offset);
+        let cmod_cod = C1(contents, &mut offset);
+        let lot_id = Cn(contents, &mut offset);
+        let part_typ = Cn(contents, &mut offset);
+        let node_nam = Cn(contents, &mut offset);
+        let tstr_typ = Cn(contents, &mut offset);
+        let job_nam = Cn(contents, &mut offset);
+        let job_rev = Cn(contents, &mut offset);
+        let sblot_id = Cn(contents, &mut offset);
+        let oper_nam = Cn(contents, &mut offset);
+        let exec_typ = Cn(contents, &mut offset);
+        let exec_ver = Cn(contents, &mut offset);
+        let test_cod = Cn(contents, &mut offset);
+        let tst_temp = Cn(contents, &mut offset);
+        let user_txt = Cn(contents, &mut offset);
+        let aux_file = Cn(contents, &mut offset);
+        let pkg_typ = Cn(contents, &mut offset);
+        let famly_id = Cn(contents, &mut offset);
+        let date_cod = Cn(contents, &mut offset);
+        let facil_id = Cn(contents, &mut offset);
+        let floor_id = Cn(contents, &mut offset);
+        let proc_id = Cn(contents, &mut offset);
+        let oper_frq = Cn(contents, &mut offset);
+        let spec_nam = Cn(contents, &mut offset);
+        let spec_ver = Cn(contents, &mut offset);
+        let flow_id = Cn(contents, &mut offset);
+        let setup_id = Cn(contents, &mut offset);
+        let dsgn_rev = Cn(contents, &mut offset);
+        let eng_id = Cn(contents, &mut offset);
+        let rom_cod = Cn(contents, &mut offset);
+        let serl_num = Cn(contents, &mut offset);
+        let supr_nam = Cn(contents, &mut offset);
 
         Self {
             setup_t,
@@ -189,43 +158,27 @@ pub struct SDR {
 impl SDR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_grp = contents[1];
-        let site_cnt = contents[2];
-        let mut offset = 3 + site_cnt as usize;
-        let site_num = contents[3..offset].to_vec();
-
-        let hand_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.HAND_TYP");
-        offset += hand_typ.len() + 1;
-        let hand_id = cn_from_bytes(contents, offset).expect("Invalid SDR.HAND_ID");
-        offset += hand_id.len() + 1;
-        let card_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.CARD_TYP");
-        offset += card_typ.len() + 1;
-        let card_id = cn_from_bytes(contents, offset).expect("Invalid SDR.CARD_ID");
-        offset += card_id.len() + 1;
-        let load_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.LOAD_TYP");
-        offset += load_typ.len() + 1;
-        let load_id = cn_from_bytes(contents, offset).expect("Invalid SDR.LOAD_ID");
-        offset += load_id.len() + 1;
-        let dib_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.DIB_TYP");
-        offset += dib_typ.len() + 1;
-        let dib_id = cn_from_bytes(contents, offset).expect("Invalid SDR.DIB_ID");
-        offset += dib_id.len() + 1;
-        let cabl_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.CABL_TYP");
-        offset += cabl_typ.len() + 1;
-        let cabl_id = cn_from_bytes(contents, offset).expect("Invalid SDR.CABL_ID");
-        offset += cabl_id.len() + 1;
-        let cont_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.CONT_TYP");
-        offset += cont_typ.len() + 1;
-        let cont_id = cn_from_bytes(contents, offset).expect("Invalid SDR.CONT_ID");
-        offset += cont_id.len() + 1;
-        let lasr_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.LASR_TYP");
-        offset += lasr_typ.len() + 1;
-        let lasr_id = cn_from_bytes(contents, offset).expect("Invalid SDR.LASR_ID");
-        offset += lasr_id.len() + 1;
-        let extr_typ = cn_from_bytes(contents, offset).expect("Invalid SDR.EXTR_TYP");
-        offset += extr_typ.len() + 1;
-        let extr_i = cn_from_bytes(contents, offset).expect("Invalid SDR.EXTR_I");
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_grp = U1(contents, &mut offset);
+        let site_cnt = U1(contents, &mut offset);
+        let site_num = kxU1(contents, site_cnt as usize, &mut offset);
+        let hand_typ = Cn(contents, &mut offset);
+        let hand_id = Cn(contents, &mut offset);
+        let card_typ = Cn(contents, &mut offset);
+        let card_id = Cn(contents, &mut offset);
+        let load_typ = Cn(contents, &mut offset);
+        let load_id = Cn(contents, &mut offset);
+        let dib_typ = Cn(contents, &mut offset);
+        let dib_id = Cn(contents, &mut offset);
+        let cabl_typ = Cn(contents, &mut offset);
+        let cabl_id = Cn(contents, &mut offset);
+        let cont_typ = Cn(contents, &mut offset);
+        let cont_id = Cn(contents, &mut offset);
+        let lasr_typ = Cn(contents, &mut offset);
+        let lasr_id = Cn(contents, &mut offset);
+        let extr_typ = Cn(contents, &mut offset);
+        let extr_i = Cn(contents, &mut offset);
 
         Self {
             head_num,
@@ -277,27 +230,23 @@ pub struct TSR {
 impl TSR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_num = contents[1];
-        let test_typ: char = char::from_u32(contents[2] as u32).expect("Invalid TSR.TEST_TYP");
-        let test_num = u32::from_le_bytes(contents[3..7].try_into().unwrap());
-        let exec_cnt = u32::from_le_bytes(contents[7..11].try_into().unwrap());
-        let fail_cnt = u32::from_le_bytes(contents[11..15].try_into().unwrap());
-        let alrm_cnt = u32::from_le_bytes(contents[15..19].try_into().unwrap());
-        let mut offset: usize = 19;
-        let test_nam = cn_from_bytes(contents, offset).expect("Invalid TSR.TEST_NAM");
-        offset += test_nam.len() + 1;
-        let seq_name = cn_from_bytes(contents, offset).expect("Invalid TSR.SEQ_NAME");
-        offset += seq_name.len() + 1;
-        let test_lbl = cn_from_bytes(contents, offset).expect("Invalid TSR.TEST_LBL");
-        offset += test_lbl.len() + 1;
-        let opt_flag = contents[offset];
-        offset += 1;
-        let test_tim = f32::from_le_bytes(contents[offset..offset + 4].try_into().unwrap());
-        let test_min = f32::from_le_bytes(contents[offset + 4..offset + 8].try_into().unwrap());
-        let test_max = f32::from_le_bytes(contents[offset + 8..offset + 12].try_into().unwrap());
-        let tst_sums = f32::from_le_bytes(contents[offset + 12..offset + 16].try_into().unwrap());
-        let tst_sqrs = f32::from_le_bytes(contents[offset + 16..offset + 20].try_into().unwrap());
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let test_typ: char = C1(contents, &mut offset);
+        let test_num = U4(contents, &mut offset);
+        let exec_cnt = U4(contents, &mut offset);
+        let fail_cnt = U4(contents, &mut offset);
+        let alrm_cnt = U4(contents, &mut offset);
+        let test_nam = Cn(contents, &mut offset);
+        let seq_name = Cn(contents, &mut offset);
+        let test_lbl = Cn(contents, &mut offset);
+        let opt_flag = U1(contents, &mut offset);
+        let test_tim = R4(contents, &mut offset);
+        let test_min = R4(contents, &mut offset);
+        let test_max = R4(contents, &mut offset);
+        let tst_sums = R4(contents, &mut offset);
+        let tst_sqrs = R4(contents, &mut offset);
 
         Self {
             head_num,
@@ -335,12 +284,13 @@ pub struct SBR {
 impl SBR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_num = contents[1];
-        let sbin_num = u16::from_le_bytes(contents[2..4].try_into().unwrap());
-        let sbin_cnt = u32::from_le_bytes(contents[4..8].try_into().unwrap());
-        let sbin_pf = char::from_u32(contents[8] as u32).expect("Invalid SBR.SBIN_PF");
-        let sbin_nam = cn_from_bytes(contents, 9).expect("Invalid SBR.SBIN_NAM");
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let sbin_num = U2(contents, &mut offset);
+        let sbin_cnt = U4(contents, &mut offset);
+        let sbin_pf = C1(contents, &mut offset);
+        let sbin_nam = Cn(contents, &mut offset);
 
         Self {
             head_num,
@@ -366,10 +316,11 @@ pub struct WIR {
 impl WIR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_grp = contents[1];
-        let start_t = u32::from_le_bytes(contents[2..6].try_into().unwrap());
-        let wafer_id = cn_from_bytes(contents, 6).expect("Invalid WIR.WAFER_ID");
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_grp = U1(contents, &mut offset);
+        let start_t = U4(contents, &mut offset);
+        let wafer_id = Cn(contents, &mut offset);
 
         Self {
             head_num,
@@ -403,26 +354,21 @@ pub struct WRR {
 impl WRR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_grp = contents[1];
-        let finish_t = u32::from_le_bytes(contents[2..6].try_into().unwrap());
-        let part_cnt = u32::from_le_bytes(contents[6..10].try_into().unwrap());
-        let rtst_cnt = u32::from_le_bytes(contents[10..14].try_into().unwrap());
-        let abrt_cnt = u32::from_le_bytes(contents[14..18].try_into().unwrap());
-        let good_cnt = u32::from_le_bytes(contents[18..22].try_into().unwrap());
-        let func_cnt = u32::from_le_bytes(contents[22..26].try_into().unwrap());
-        let mut offset = 26;
-        let wafer_id = cn_from_bytes(contents, offset).expect("Invalid WRR.WAFER_ID");
-        offset += 1 + wafer_id.len();
-        let fabwf_id = cn_from_bytes(contents, offset).expect("Invalid WRR.FABWF_ID");
-        offset += 1 + fabwf_id.len();
-        let frame_id = cn_from_bytes(contents, offset).expect("Invalid WRR.FRAME_ID");
-        offset += 1 + frame_id.len();
-        let mask_id = cn_from_bytes(contents, offset).expect("Invalid WRR.MASK_ID");
-        offset += 1 + mask_id.len();
-        let usr_desc = cn_from_bytes(contents, offset).expect("Invalid WRR.USR_DESC");
-        offset += 1 + usr_desc.len();
-        let exc_desc = cn_from_bytes(contents, offset).expect("Invalid WRR.EXC_DESC");
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_grp = U1(contents, &mut offset);
+        let finish_t = U4(contents, &mut offset);
+        let part_cnt = U4(contents, &mut offset);
+        let rtst_cnt = U4(contents, &mut offset);
+        let abrt_cnt = U4(contents, &mut offset);
+        let good_cnt = U4(contents, &mut offset);
+        let func_cnt = U4(contents, &mut offset);
+        let wafer_id = Cn(contents, &mut offset);
+        let fabwf_id = Cn(contents, &mut offset);
+        let frame_id = Cn(contents, &mut offset);
+        let mask_id = Cn(contents, &mut offset);
+        let usr_desc = Cn(contents, &mut offset);
+        let exc_desc = Cn(contents, &mut offset);
 
         Self {
             head_num,
@@ -458,12 +404,13 @@ pub struct HBR {
 impl HBR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_num = contents[1];
-        let hbin_num = u16::from_le_bytes(contents[2..4].try_into().unwrap());
-        let hbin_cnt = u32::from_le_bytes(contents[4..8].try_into().unwrap());
-        let hbin_pf = char::from_u32(contents[8] as u32).expect("Invalid HBR.HBIN_PF");
-        let hbin_nam = cn_from_bytes(contents, 9).expect("Invalid HBR.HBIN_NAM");
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let hbin_num = U2(contents, &mut offset);
+        let hbin_cnt = U4(contents, &mut offset);
+        let hbin_pf = C1(contents, &mut offset);
+        let hbin_nam = Cn(contents, &mut offset);
 
         Self {
             head_num,
@@ -492,13 +439,14 @@ pub struct PCR {
 impl PCR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_num = contents[1];
-        let part_cnt = u32::from_le_bytes(contents[2..6].try_into().unwrap());
-        let rtst_cnt = u32::from_le_bytes(contents[6..10].try_into().unwrap());
-        let abrt_cnt = u32::from_le_bytes(contents[10..14].try_into().unwrap());
-        let good_cnt = u32::from_le_bytes(contents[14..18].try_into().unwrap());
-        let func_cnt = u32::from_le_bytes(contents[18..22].try_into().unwrap());
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let part_cnt = U4(contents, &mut offset);
+        let rtst_cnt = U4(contents, &mut offset);
+        let abrt_cnt = U4(contents, &mut offset);
+        let good_cnt = U4(contents, &mut offset);
+        let func_cnt = U4(contents, &mut offset);
 
         Self {
             head_num,
@@ -551,20 +499,19 @@ pub struct PRR {
 impl PRR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let head_num = contents[0];
-        let site_num = contents[1];
-        let part_flg = contents[2];
-        let num_test = u16::from_le_bytes(contents[3..5].try_into().unwrap());
-        let hard_bin = u16::from_le_bytes(contents[5..7].try_into().unwrap());
-        let soft_bin = u16::from_le_bytes(contents[7..9].try_into().unwrap());
-        let x_coord = i16::from_le_bytes(contents[9..11].try_into().unwrap());
-        let y_coord = i16::from_le_bytes(contents[11..13].try_into().unwrap());
-        let test_t = u32::from_le_bytes(contents[13..17].try_into().unwrap());
-        let part_id = cn_from_bytes(contents, 17).expect("Invalid PRR.PART_ID");
-        let mut offset = 18 + part_id.len() as usize;
-        let part_txt = cn_from_bytes(contents, offset).expect("Invalid PRR.PART_TXT");
-        offset += 1 + part_txt.len() as usize;
-        let part_fix = bn_from_bytes(contents, offset);
+        let mut offset: usize = 0;
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let part_flg = U1(contents, &mut offset);
+        let num_test = U2(contents, &mut offset);
+        let hard_bin = U2(contents, &mut offset);
+        let soft_bin = U2(contents, &mut offset);
+        let x_coord = I2(contents, &mut offset);
+        let y_coord = I2(contents, &mut offset);
+        let test_t = U4(contents, &mut offset);
+        let part_id = Cn(contents, &mut offset);
+        let part_txt = Cn(contents, &mut offset);
+        let part_fix = Bn(contents, &mut offset);
 
         Self {
             head_num,
@@ -596,11 +543,11 @@ pub struct MRR {
 impl MRR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let finish_t = u32::from_le_bytes(contents[..4].try_into().unwrap());
-        let disp_cod = char::from_u32(contents[4] as u32).expect("Invalid MRR.DISP_COD");
-        let usr_desc = cn_from_bytes(contents, 5).expect("Invalid MRR.USR_DESC");
-        let offset = 6 + usr_desc.len() as usize;
-        let exc_desc = cn_from_bytes(contents, offset).expect("Invalid MRR.EXC_DESC");
+        let mut offset: usize = 0;
+        let finish_t = U4(contents, &mut offset);
+        let disp_cod = C1(contents, &mut offset);
+        let usr_desc = Cn(contents, &mut offset);
+        let exc_desc = Cn(contents, &mut offset);
 
         Self {
             finish_t,
@@ -640,17 +587,15 @@ pub struct PTR {
 impl PTR {
     pub fn from_raw_record(record: &RawRecord) -> Self {
         let contents = &record.contents;
-        let test_num = u32::from_le_bytes(contents[..4].try_into().unwrap());
-        let head_num = contents[4];
-        let site_num = contents[5];
-        let test_flg = contents[6];
-        let parm_flg = contents[7];
-        let result = f32::from_le_bytes(contents[8..12].try_into().unwrap());
-        let mut offset = 12;
-        let test_txt = cn_from_bytes(contents, offset).expect("Invalid PTR.TEST_TXT");
-        offset += 1 + test_txt.len();
-        let alarm_id = cn_from_bytes(contents, offset).expect("Invalid PTR.ALARM_ID");
-        offset += 1 + alarm_id.len();
+        let mut offset: usize = 0;
+        let test_num = U4(contents, &mut offset);
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let test_flg = U1(contents, &mut offset);
+        let parm_flg = U1(contents, &mut offset);
+        let result = R4(contents, &mut offset);
+        let test_txt = Cn(contents, &mut offset);
+        let alarm_id = Cn(contents, &mut offset);
         let opt_flag;
         let res_scal;
         let llm_scal;
@@ -664,29 +609,18 @@ impl PTR {
         let lo_spec;
         let hi_spec;
         if offset < record.contents.len() {
-            opt_flag = contents[offset];
-            offset += 1;
-            res_scal = i8::from_le_bytes(contents[offset..offset + 1].try_into().unwrap());
-            offset += 1;
-            llm_scal = i8::from_le_bytes(contents[offset..offset + 1].try_into().unwrap());
-            offset += 1;
-            hlm_scal = i8::from_le_bytes(contents[offset..offset + 1].try_into().unwrap());
-            offset += 1;
-            lo_limit = f32::from_le_bytes(contents[offset..offset + 4].try_into().unwrap());
-            offset += 4;
-            hi_limit = f32::from_le_bytes(contents[offset..offset + 4].try_into().unwrap());
-            offset += 4;
-            units = cn_from_bytes(contents, offset).expect("Invalid PTR.UNITS");
-            offset += 1 + units.len();
-            c_resfmt = cn_from_bytes(contents, offset).expect("Invalid PTR.C_RESFMT");
-            offset += 1 + c_resfmt.len();
-            c_llmfmt = cn_from_bytes(contents, offset).expect("Invalid PTR.C_LLMFMT");
-            offset += 1 + c_llmfmt.len();
-            c_hlmfmt = cn_from_bytes(contents, offset).expect("Invalid PTR.C_HLMFMT");
-            offset += 1 + c_hlmfmt.len();
-            lo_spec = f32::from_le_bytes(contents[offset..offset + 4].try_into().unwrap());
-            offset += 4;
-            hi_spec = f32::from_le_bytes(contents[offset..offset + 4].try_into().unwrap());
+            opt_flag = U1(contents, &mut offset);
+            res_scal = I1(contents, &mut offset);
+            llm_scal = I1(contents, &mut offset);
+            hlm_scal = I1(contents, &mut offset);
+            lo_limit = R4(contents, &mut offset);
+            hi_limit = R4(contents, &mut offset);
+            units = Cn(contents, &mut offset);
+            c_resfmt = Cn(contents, &mut offset);
+            c_llmfmt = Cn(contents, &mut offset);
+            c_hlmfmt = Cn(contents, &mut offset);
+            lo_spec = R4(contents, &mut offset);
+            hi_spec = R4(contents, &mut offset);
         } else {
             opt_flag = 0;
             res_scal = 0;
@@ -729,6 +663,106 @@ impl PTR {
 
 #[derive(Debug)]
 #[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct FTR {
+    pub test_num: u32,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub test_flg: u8,
+    pub opt_flag: u8,
+    pub cycl_cnt: u32,
+    pub rel_vadr: u32,
+    pub rept_cnt: u32,
+    pub num_fail: u32,
+    pub xfail_ad: i32,
+    pub yfail_ad: i32,
+    pub vect_off: i16,
+    pub rtn_icnt: u16,      // j
+    pub pgm_icnt: u16,      // k
+    pub rtn_indx: Vec<u16>, // rtn_icnt
+    pub rtn_stat: Vec<u8>,  // rtn_icnt, nibbles
+    pub pgm_indx: Vec<u16>, // pgm_icnt
+    pub pgm_stat: Vec<u8>,  // pgm_icnt, nibbles
+    pub fail_pin: Vec<u8>,  // Dn type (first 2 bytes length)
+    pub vect_nam: String,
+    pub time_set: String,
+    pub op_code: String,
+    pub test_txt: String,
+    pub alarm_id: String,
+    pub prog_txt: String,
+    pub rslt_txt: String,
+    pub patg_num: u8,
+    pub spin_map: Vec<u8>, // Dn type (first 2 bytes length)
+}
+
+impl FTR {
+    pub fn from_raw_record(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+        let test_num = U4(contents, &mut offset);
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let test_flg = U1(contents, &mut offset);
+        let opt_flag = U1(contents, &mut offset);
+        let cycl_cnt = U4(contents, &mut offset);
+        let rel_vadr = U4(contents, &mut offset);
+        let rept_cnt = U4(contents, &mut offset);
+        let num_fail = U4(contents, &mut offset);
+        let xfail_ad = I4(contents, &mut offset);
+        let yfail_ad = I4(contents, &mut offset);
+        let vect_off = I2(contents, &mut offset);
+        let rtn_icnt = U2(contents, &mut offset);
+        let pgm_icnt = U2(contents, &mut offset);
+        let rtn_indx = kxU2(contents, rtn_icnt, &mut offset);
+        let rtn_stat = kxN1(contents, rtn_icnt, &mut offset);
+        let pgm_indx = kxU2(contents, pgm_icnt, &mut offset);
+        let pgm_stat = kxN1(contents, pgm_icnt, &mut offset);
+        let fail_pin = Dn(contents, &mut offset);
+        let vect_nam = Cn(contents, &mut offset);
+        let time_set = Cn(contents, &mut offset);
+        let op_code = Cn(contents, &mut offset);
+        let test_txt = Cn(contents, &mut offset);
+        let alarm_id = Cn(contents, &mut offset);
+        let prog_txt = Cn(contents, &mut offset);
+        let rslt_txt = Cn(contents, &mut offset);
+        let patg_num = U1(contents, &mut offset);
+        let spin_map = Dn(contents, &mut offset);
+
+        Self {
+            test_num,
+            head_num,
+            site_num,
+            test_flg,
+            opt_flag,
+            cycl_cnt,
+            rel_vadr,
+            rept_cnt,
+            num_fail,
+            xfail_ad,
+            yfail_ad,
+            vect_off,
+            rtn_icnt,
+            pgm_icnt,
+            rtn_indx,
+            rtn_stat,
+            pgm_indx,
+            pgm_stat,
+            fail_pin,
+            vect_nam,
+            time_set,
+            op_code,
+            test_txt,
+            alarm_id,
+            prog_txt,
+            rslt_txt,
+            patg_num,
+            spin_map,
+        }
+    }
+}
+
+#[derive(Debug)]
+#[allow(dead_code)]
 pub struct NotImplementedRecord {}
 
 #[derive(Debug)]
@@ -753,7 +787,7 @@ pub enum Record {
     TSR(TSR),
     PTR(PTR),
     MPR(NotImplementedRecord),
-    FTR(NotImplementedRecord),
+    FTR(FTR),
     BPS(NotImplementedRecord),
     EPS(NotImplementedRecord),
     GDR(NotImplementedRecord),

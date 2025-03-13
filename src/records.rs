@@ -71,6 +71,7 @@ impl RawRecord {
             RecordType::WIR => Some(Record::WIR(WIR::from_raw_record(&self))),
             RecordType::WRR => Some(Record::WRR(WRR::from_raw_record(&self))),
             RecordType::PTR => Some(Record::PTR(PTR::from_raw_record(&self))),
+            RecordType::FTR => Some(Record::FTR(FTR::from_raw_record(&self))),
             _ => None,
         }
     }
