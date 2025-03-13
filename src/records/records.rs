@@ -759,6 +759,12 @@ impl FTR {
             spin_map,
         }
     }
+
+    pub fn get_passfail(&self) -> bool {
+        let test_flg = self.test_flg;
+        // don't bother checking the other flags
+        test_flg & 0x80 == 0
+    }
 }
 
 #[derive(Debug)]

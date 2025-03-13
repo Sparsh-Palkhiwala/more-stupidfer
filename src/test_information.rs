@@ -144,7 +144,7 @@ impl TestInformation {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum TestType {
     P,
     F,
@@ -266,6 +266,7 @@ impl FullMergedTestInformation {
         let test_infos = HashMap::new();
         Self { test_infos }
     }
+
     pub fn add_from_test_information(&mut self, test_information: &TestInformation) {
         let key = test_information.test_num;
         self.test_infos
@@ -274,5 +275,13 @@ impl FullMergedTestInformation {
             .or_insert(MergedTestInformation::new_from_test_information(
                 test_information,
             ));
+    }
+
+    pub fn get_num(&self, test_type: TestType) -> usize {
+        self.test_infos
+            .values()
+            .filter(|&mti| mti.test_type == test_type)
+            .collect::<Vec<_>>()
+            .len()
     }
 }

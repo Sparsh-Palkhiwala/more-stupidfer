@@ -80,7 +80,7 @@ fn main() -> std::io::Result<()> {
                 test_data.new_part(&pir);
             }
             if let Record::PTR(ref ptr) = resolved {
-                test_data.add_data(&ptr);
+                test_data.add_data_ptr(&ptr);
             }
             if let Record::PRR(ref prr) = resolved {
                 test_data.finish_part(&prr);
