@@ -1,12 +1,13 @@
 use std::collections::{
-    HashMap,
     hash_map::Entry::{Occupied, Vacant},
+    HashMap,
 };
 
-use itertools::{Itertools, enumerate};
+use itertools::{enumerate, Itertools};
 
+use crate::records::Records;
 use crate::{
-    records::records::{FTR, PIR, PRR, PTR},
+    records::records::{Record, FTR, PIR, PRR, PTR},
     test_information::{FullMergedTestInformation, FullTestInformation, TestType},
 };
 
@@ -135,5 +136,28 @@ impl TestData {
         } else {
             panic!("trying to close out a head_num/site_num that is not open!")
         }
+    }
+    pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
+        let test_info = FullTestInformation::from_fname(fname, verbose)?;
+        let mut test_data = Self::new(test_info);
+        let records = Records::new(&fname)?;
+
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                if let Record::PIR(ref pir) = resolved {
+                    test_data.new_part(&pir);
+                }
+                if let Record::PTR(ref ptr) = resolved {
+                    test_data.add_data_ptr(&ptr);
+                }
+                if let Record::FTR(ref ftr) = resolved {
+                    test_data.add_data_ftr(&ftr);
+                }
+                if let Record::PRR(ref prr) = resolved {
+                    test_data.finish_part(&prr);
+                }
+            }
+        }
+        Ok(test_data)
     }
 }

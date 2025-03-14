@@ -1,5 +1,8 @@
+use crate::records::records::Record;
 use crate::records::records::PTR;
 use crate::records::records::TSR;
+use crate::records::RecordSummary;
+use crate::records::Records;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -189,6 +192,85 @@ impl FullTestInformation {
             merged_test_info.add_from_test_information(ti);
         }
         merged_test_info
+    }
+
+    pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
+        let records = Records::new(&fname)?;
+        let mut test_info = Self::new();
+
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                let header = &record.header;
+
+                if verbose {
+                    println!(
+                        "{}.{} (0x{:x} @ 0x{:x}): {:?}",
+                        header.rec_typ, header.rec_sub, header.rec_len, record.offset, record.rtype
+                    );
+                }
+                if let Record::TSR(ref tsr) = resolved {
+                    test_info.add_from_tsr(&tsr);
+                }
+                if let Record::PIR(_) = resolved {
+                    continue;
+                }
+                if let Record::FTR(_) = resolved {
+                    continue;
+                }
+                if let Record::PTR(ref ptr) = resolved {
+                    test_info.add_from_ptr(&ptr);
+                }
+                //if let Record::PRR(_) = resolved {
+                //    continue;
+                //}
+                if verbose {
+                    println!("{resolved:#?}");
+                }
+            }
+        }
+        Ok(test_info)
+    }
+
+    pub fn from_fname_and_summarize(
+        fname: &str,
+        verbose: bool,
+    ) -> std::io::Result<(Self, RecordSummary)> {
+        let records = Records::new(&fname)?;
+        let mut summary = RecordSummary::new();
+        let mut test_info = Self::new();
+
+        for record in records {
+            summary.add(&record);
+            if let Some(resolved) = record.resolve() {
+                let header = &record.header;
+
+                if verbose {
+                    println!(
+                        "{}.{} (0x{:x} @ 0x{:x}): {:?}",
+                        header.rec_typ, header.rec_sub, header.rec_len, record.offset, record.rtype
+                    );
+                }
+                if let Record::TSR(ref tsr) = resolved {
+                    test_info.add_from_tsr(&tsr);
+                }
+                if let Record::PIR(_) = resolved {
+                    continue;
+                }
+                if let Record::FTR(_) = resolved {
+                    continue;
+                }
+                if let Record::PTR(ref ptr) = resolved {
+                    test_info.add_from_ptr(&ptr);
+                }
+                //if let Record::PRR(_) = resolved {
+                //    continue;
+                //}
+                if verbose {
+                    println!("{resolved:#?}");
+                }
+            }
+        }
+        Ok((test_info, summary))
     }
 }
 
