@@ -1,9 +1,11 @@
+use chrono::prelude::*;
 use std::collections::{
     HashMap,
     hash_map::Entry::{Occupied, Vacant},
 };
 
 use itertools::Itertools;
+use polars::prelude::*;
 use pyo3::IntoPyObject;
 
 use crate::records::{Records, records::MIR};
@@ -47,7 +49,7 @@ pub struct TestData {
     pub test_information: FullMergedTestInformation,
     pub index_lookup: HashMap<u32, usize>,
     pub data: Vec<Row>,
-    pub temp_rows: HashMap<(u8, u8), Row>,
+    temp_rows: HashMap<(u8, u8), Row>,
     n_para: usize,
     n_func: usize,
 }
@@ -174,5 +176,49 @@ impl STDF {
         let mir = MIR::from_fname(&fname)?;
         let test_data = TestData::from_fname(&fname, verbose)?;
         Ok(Self { mir, test_data })
+    }
+}
+
+pub fn make_vec(test_data: &TestData) -> Vec<f32> {
+    test_data
+        .data
+        .iter()
+        .map(|x| x.results_parametric[0])
+        .collect()
+}
+
+pub fn make_series(test_data: &TestData) -> Series {
+    test_data
+        .data
+        .iter()
+        .map(|x| x.results_parametric[0])
+        .collect()
+}
+
+#[derive(Debug)]
+pub struct STDFDataFrame {
+    pub df: DataFrame,
+}
+
+impl STDFDataFrame {
+    //pub fn new(test_data: &TestData) -> Self{
+    //
+    //
+    //}
+
+    pub fn test() -> Self {
+        let df: DataFrame = df!(
+            "name" => ["Alice Archer", "Ben Brown", "Chloe Cooper", "Daniel Donovan"],
+            "birthdate" => [
+                NaiveDate::from_ymd_opt(1997, 1, 10).unwrap(),
+                NaiveDate::from_ymd_opt(1985, 2, 15).unwrap(),
+                NaiveDate::from_ymd_opt(1983, 3, 22).unwrap(),
+                NaiveDate::from_ymd_opt(1981, 4, 30).unwrap(),
+            ],
+            "weight" => [57.9, 72.5, 53.6, 83.1],  // (kg)
+            "height" => [1.56, 1.77, 1.65, 1.75],  // (m)
+        )
+        .unwrap();
+        Self { df }
     }
 }
