@@ -3,6 +3,12 @@ name = "stupidf"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "stupidf"
+path = "src/lib.rs"
+crate-type = ["lib", "cdylib"]
+
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
 itertools = "0.14.0"
+pyo3 = "0.24.0"

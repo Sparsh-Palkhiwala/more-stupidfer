@@ -1,7 +1,10 @@
+use super::Records;
 use crate::records::RawRecord;
 use crate::util::*;
+use pyo3::prelude::IntoPyObject;
+use std::io;
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 pub struct MIR {
     pub setup_t: u32,
@@ -128,9 +131,25 @@ impl MIR {
             supr_nam,
         }
     }
+
+    pub fn from_fname(fname: &str) -> std::io::Result<Self> {
+        let records = Records::new(&fname)?;
+
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                if let Record::MIR(mir) = resolved {
+                    return Ok(mir);
+                }
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "Failed to find MIR in file",
+        ))
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 pub struct SDR {
     pub head_num: u8,
@@ -205,7 +224,7 @@ impl SDR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct TSR {
@@ -269,7 +288,7 @@ impl TSR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct SBR {
@@ -303,7 +322,7 @@ impl SBR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WIR {
@@ -331,7 +350,7 @@ impl WIR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WRR {
@@ -389,7 +408,7 @@ impl WRR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct HBR {
@@ -423,7 +442,7 @@ impl HBR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PCR {
@@ -460,7 +479,7 @@ impl PCR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PIR {
@@ -478,7 +497,7 @@ impl PIR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PRR {
@@ -530,7 +549,7 @@ impl PRR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct MRR {
@@ -558,7 +577,7 @@ impl MRR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct PTR {
@@ -661,7 +680,7 @@ impl PTR {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct FTR {

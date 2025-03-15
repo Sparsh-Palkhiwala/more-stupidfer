@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use stupidf::data::TestData;
+use stupidf::data::STDF;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -15,9 +15,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fname = cli.fname;
     let verbose = cli.verbose;
 
-    if let Ok(test_data) = TestData::from_fname(&fname, verbose) {
+    if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
         if verbose {
-            println!("{test_data:#?}");
+            println!("{stdf:#?}");
         }
     } else {
         eprintln!("Failed to parse file {fname}");

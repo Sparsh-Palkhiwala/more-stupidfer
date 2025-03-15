@@ -1,17 +1,18 @@
 use std::collections::{
-    hash_map::Entry::{Occupied, Vacant},
     HashMap,
+    hash_map::Entry::{Occupied, Vacant},
 };
 
-use itertools::{enumerate, Itertools};
+use itertools::Itertools;
+use pyo3::IntoPyObject;
 
-use crate::records::Records;
+use crate::records::{Records, records::MIR};
 use crate::{
-    records::records::{Record, FTR, PIR, PRR, PTR},
+    records::records::{FTR, PIR, PRR, PTR, Record},
     test_information::{FullMergedTestInformation, FullTestInformation, TestType},
 };
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 pub struct Row {
     part_id: String,
     x_coord: i16,
@@ -40,7 +41,7 @@ impl Row {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 pub struct TestData {
     pub full_test_information: FullTestInformation,
     pub test_information: FullMergedTestInformation,
@@ -159,5 +160,19 @@ impl TestData {
             }
         }
         Ok(test_data)
+    }
+}
+
+#[derive(Debug, IntoPyObject)]
+pub struct STDF {
+    mir: MIR,
+    test_data: TestData,
+}
+
+impl STDF {
+    pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
+        let mir = MIR::from_fname(&fname)?;
+        let test_data = TestData::from_fname(&fname, verbose)?;
+        Ok(Self { mir, test_data })
     }
 }

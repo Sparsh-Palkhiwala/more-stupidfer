@@ -1,11 +1,16 @@
-use crate::records::records::Record;
-use crate::records::records::PTR;
-use crate::records::records::TSR;
 use crate::records::RecordSummary;
 use crate::records::Records;
+use crate::records::records::PTR;
+use crate::records::records::Record;
+use crate::records::records::TSR;
+use pyo3::Bound;
+use pyo3::IntoPyObject;
+use pyo3::Python;
+use pyo3::types::PyString;
 use std::collections::HashMap;
+use std::convert::Infallible;
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 pub struct TestInformation {
     pub test_num: u32,
     pub head_num: u8,
@@ -29,6 +34,21 @@ pub enum Complete {
     PTR,
     TSR,
     Complete,
+}
+
+impl<'py> IntoPyObject<'py> for Complete {
+    type Target = PyString;
+    type Output = Bound<'py, Self::Target>;
+    type Error = Infallible;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
+        let s = match self {
+            Self::TSR => "TSR".to_string().into_pyobject(py),
+            Self::PTR => "PTR".to_string().into_pyobject(py),
+            Self::Complete => "Complete".to_string().into_pyobject(py),
+        };
+        Ok(s?)
+    }
 }
 
 impl TestInformation {
@@ -156,7 +176,24 @@ pub enum TestType {
     Unknown,
 }
 
-#[derive(Debug)]
+impl<'py> IntoPyObject<'py> for TestType {
+    type Target = PyString;
+    type Output = Bound<'py, Self::Target>;
+    type Error = Infallible;
+
+    fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
+        let s = match self {
+            Self::P => "P".to_string().into_pyobject(py),
+            Self::F => "F".to_string().into_pyobject(py),
+            Self::M => "M".to_string().into_pyobject(py),
+            Self::S => "S".to_string().into_pyobject(py),
+            Self::Unknown => "Unknown".to_string().into_pyobject(py),
+        };
+        Ok(s?)
+    }
+}
+
+#[derive(Debug, IntoPyObject)]
 pub struct FullTestInformation {
     pub test_infos: HashMap<(u32, u8, u8), TestInformation>,
 }
@@ -290,7 +327,7 @@ impl IntoIterator for FullTestInformation {
 //    }
 //}
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 pub struct MergedTestInformation {
     pub test_num: u32,
     pub test_type: TestType,
@@ -339,7 +376,7 @@ impl MergedTestInformation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, IntoPyObject)]
 pub struct FullMergedTestInformation {
     pub test_infos: HashMap<u32, MergedTestInformation>,
 }
