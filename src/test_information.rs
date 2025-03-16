@@ -13,6 +13,11 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt;
 
+/// `TestInformation` for a single test
+///
+/// The metadata for a test is uniquely determined by (`test_num`, `head_num`, `site_num`). This
+/// structure does not contain information about any executions of the test, it only contains
+/// metadata associated with the test.
 #[derive(Debug, IntoPyObject)]
 pub struct TestInformation {
     pub test_num: u32,
@@ -31,14 +36,26 @@ pub struct TestInformation {
     pub complete: Complete,
 }
 
+/// Enum describing if a `TestInformation` has been completed
+///
+/// `TestInformation` is determined by the combination of a `TSR` and at least one `PTR`.
+/// The `TSR` variant indicates that the metadata from a `TSR` has been added.
+/// The `PTR` variant indicates that the metadata from a `PTR` has been added.
+/// The `Complete` variant indicates that both a `TSR` and `PTR` have been seen.
 #[derive(Debug)]
 pub enum Complete {
-    //None,
+    /// Metadata from a PTR has been added to the owning TestInformation
     PTR,
+    /// Metadata from a TSR has been added to the owning TestInformation
     TSR,
+    /// Metadata from both a PTR and TSR have been added to the owning TestInformation
     Complete,
 }
 
+/// Determines how to convert `Complete` into Python objects
+///
+/// Can't derive `IntoPyObject` for enums, so implement manually.
+/// The variants are simply converted to strings of their variant names
 impl<'py> IntoPyObject<'py> for Complete {
     type Target = PyString;
     type Output = Bound<'py, Self::Target>;
@@ -55,6 +72,7 @@ impl<'py> IntoPyObject<'py> for Complete {
 }
 
 impl TestInformation {
+    /// Create a new `TestInformation` from a `PTR` record
     pub fn new_from_ptr(ptr: &PTR) -> Self {
         let test_num = ptr.test_num;
         let head_num = ptr.head_num;
@@ -89,6 +107,7 @@ impl TestInformation {
         }
     }
 
+    /// Add to an existing `TestInformation` with a `TSR` record
     pub fn add_from_tsr(&mut self, tsr: &TSR) {
         if (self.head_num != tsr.head_num)
             || (self.site_num != tsr.site_num)
@@ -113,6 +132,7 @@ impl TestInformation {
         }
     }
 
+    /// Create a new `TestInformation` from a `TSR` record
     pub fn new_from_tsr(tsr: &TSR) -> Self {
         let test_num = tsr.test_num;
         let head_num = tsr.head_num;
@@ -153,6 +173,7 @@ impl TestInformation {
         }
     }
 
+    /// Add to an existing `TestInformation` with a `PTR`
     pub fn add_from_ptr(&mut self, ptr: &PTR) {
         if (self.head_num != ptr.head_num)
             || (self.site_num != ptr.site_num)
@@ -170,12 +191,18 @@ impl TestInformation {
     }
 }
 
+/// `TestType` describes the category of test
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum TestType {
+    /// A parametric test, i.e. one that measures a value
     P,
+    /// A functional test, i.e. one with only pass/fail
     F,
+    /// A multi-result parametric test, i.e. one that measures many values
     M,
+    /// A scan test
     S,
+    /// An unknown test type
     Unknown,
 }
 
@@ -185,6 +212,10 @@ impl fmt::Display for TestType {
     }
 }
 
+/// Determines how to convert `TestType` into Python objects
+///
+/// Can't derive `IntoPyObject` for enums, so implement manually.
+/// The variants are simply converted to strings of their variant names
 impl<'py> IntoPyObject<'py> for TestType {
     type Target = PyString;
     type Output = Bound<'py, Self::Target>;
@@ -202,17 +233,25 @@ impl<'py> IntoPyObject<'py> for TestType {
     }
 }
 
+/// A collection of all `TestInformation`s in a STDF file
+///
+/// Indexed by (`test_num`, `site_num`, `head_num`)
 #[derive(Debug, IntoPyObject)]
 pub struct FullTestInformation {
     pub test_infos: HashMap<(u32, u8, u8), TestInformation>,
 }
 
 impl FullTestInformation {
+    /// Initialize with an empty HashMap
     pub fn new() -> Self {
         let test_infos = HashMap::new();
         Self { test_infos }
     }
 
+    /// Add the metadata from a `PTR`.
+    ///
+    /// Looks up the appropriate `TestInformation` using the (`test_num`, `site_num`, `head_num`)
+    /// in the `PTR` and adds to this `TestInformation`
     pub fn add_from_ptr(&mut self, ptr: &PTR) {
         let key = (ptr.test_num, ptr.site_num, ptr.head_num);
         self.test_infos
@@ -221,6 +260,10 @@ impl FullTestInformation {
             .or_insert(TestInformation::new_from_ptr(ptr));
     }
 
+    /// Add the metadata from a `TSR`.
+    ///
+    /// Looks up the appropriate `TestInformation` using the (`test_num`, `site_num`, `head_num`)
+    /// in the `TSR` and adds to this `TestInformation`
     pub fn add_from_tsr(&mut self, tsr: &TSR) {
         if tsr.head_num == 255 {
             return;
@@ -232,6 +275,12 @@ impl FullTestInformation {
             .or_insert(TestInformation::new_from_tsr(tsr));
     }
 
+    /// Merges down the `FullTestInformation` to a `FullMergedTestInformation`
+    ///
+    /// The `FullMergedTestInformation` is indexed by only `test_num` rather than
+    /// (`test_num`, `site_num`, `head_num`). Usually all sites and all heads implement the
+    /// same tests and just run them in parallel, so it's not necessary to keep track of the
+    /// `site_num` and `head_num`.
     pub fn merge(&self) -> FullMergedTestInformation {
         let mut merged_test_info = FullMergedTestInformation::new();
         for ti in self.test_infos.values() {
@@ -240,6 +289,17 @@ impl FullTestInformation {
         merged_test_info
     }
 
+    /// Gather all of the test information from a STDF specified by `fname`
+    ///
+    /// Iterates over all records in the STDF.
+    ///
+    /// Optionally allows for printing of the records while iterating over them, e.g. if you want
+    /// to make an ASCII text version.
+    ///
+    /// TODO: Make which records are printed configurable
+    ///
+    /// # Errors
+    /// If for some reason the file can't be parsed, returns a std::io::Error
     pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
         let records = Records::new(&fname)?;
         let mut test_info = Self::new();
@@ -328,14 +388,19 @@ impl IntoIterator for FullTestInformation {
     }
 }
 
-//impl<'a> IntoIterator for &'a FullTestInformation {
-//    type Item = ((u32, u8, u8), &'a TestInformation);
-//    type IntoIter = <HashMap<(u32, u8, u8), &'a TestInformation> as IntoIterator>::IntoIter;
-//    fn into_iter(self) -> Self::IntoIter {
-//        self.test_infos.iter()
-//    }
-//}
-
+/// `MergedTestInformation` for a single test
+///
+/// The metadata for a test is uniquely determined by (`test_num`, `head_num`, `site_num`),
+/// however typically the `head_num` and `site_num` are redundant since all heads and sites are
+/// measuring the same thing in parallel. Given that, the `MergedTestInformation` contains the
+/// `TestInformation` associated with all `head_num`s and `site_num`s for a given `test_num`
+/// merged down to one structure.
+///
+/// The first (`test_num`, `head_num`, `site_num`) for a given `test_num` determines all of the
+/// metadata. Subsequent triplets with the same `test_num` simply add to the `execution_count`.
+///
+/// This structure does not contain information about any executions of the test, it only contains
+/// metadata associated with the test.
 #[derive(Debug, IntoPyObject)]
 pub struct MergedTestInformation {
     pub test_num: u32,
@@ -351,6 +416,7 @@ pub struct MergedTestInformation {
     pub units: String,
 }
 impl MergedTestInformation {
+    /// Initialize a new `MergedTestInformation` from a `TestInformation` record
     pub fn new_from_test_information(test_information: &TestInformation) -> Self {
         let test_num = test_information.test_num;
         let test_type = test_information.test_type.clone();
@@ -378,6 +444,7 @@ impl MergedTestInformation {
         }
     }
 
+    /// Add the `execution_count` from a `TestInformation` to an existing `MergedTestInformation`
     pub fn add(&mut self, test_information: &TestInformation) {
         if self.test_num != test_information.test_num {
             panic!("TestInformation.test_num does not match that of MergedTestInformation!")
@@ -386,16 +453,25 @@ impl MergedTestInformation {
     }
 }
 
+/// A collection of all `MergedTestInformation`s in a STDF file
+///
+/// Indexed by `test_num`
 #[derive(Debug, IntoPyObject)]
 pub struct FullMergedTestInformation {
     pub test_infos: HashMap<u32, MergedTestInformation>,
 }
 impl FullMergedTestInformation {
+    /// Initialize a new `FullMergedTestInformation` with an empty HashMap
     pub fn new() -> Self {
         let test_infos = HashMap::new();
         Self { test_infos }
     }
 
+    /// Adds the metadata from a `TestInformation` record
+    ///
+    /// If there is not a corresponding `MergedTestInformation` for the `test_num`, a new one is
+    /// made. If there is already a corresponding `MergedTestInformation`, adds the
+    /// `execution_count`.
     pub fn add_from_test_information(&mut self, test_information: &TestInformation) {
         let key = test_information.test_num;
         self.test_infos
@@ -406,6 +482,7 @@ impl FullMergedTestInformation {
             ));
     }
 
+    /// Get the number of different tests with a given `TestType`
     pub fn get_num(&self, test_type: TestType) -> usize {
         self.test_infos
             .values()
@@ -415,18 +492,7 @@ impl FullMergedTestInformation {
     }
 }
 
-//pub struct MergedTestInformation {
-//    pub test_num: u32,
-//    pub test_type: TestType,
-//    pub execution_count: u32,
-//    pub test_name: String,
-//    pub sequence_name: String,
-//    pub test_label: String,
-//    pub test_time: f32,
-//    pub test_text: String,
-//    pub low_limit: f32,
-//    pub high_limit: f32,
-//    pub units: String,
+/// Make a DataFrame containing the info in a `FullMergedTestInformation`
 impl Into<DataFrame> for &FullMergedTestInformation {
     fn into(self) -> DataFrame {
         let mut test_nums: Vec<u32> = Vec::new();

@@ -4,6 +4,7 @@ use crate::util::*;
 use pyo3::prelude::IntoPyObject;
 use std::io;
 
+/// Master Information Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 pub struct MIR {
@@ -132,6 +133,16 @@ impl MIR {
         }
     }
 
+    /// Get the MIR from a file at `fname`
+    ///
+    /// Opens the file from scratch and grabs the MIR rather than re-use some open file handle.
+    /// The MIR is always right near the beginning of the file, so this is not very expensive
+    ///
+    /// # Error
+    /// If for some reason the file cannot be parsed, returns an `std::io::Error`
+    ///
+    /// If for some reason an MIR cannot be found in the file, returns a
+    /// `std::io::ErrorKind::UnexpectedEof`
     pub fn from_fname(fname: &str) -> std::io::Result<Self> {
         let records = Records::new(&fname)?;
 
@@ -149,6 +160,7 @@ impl MIR {
     }
 }
 
+/// Site Description Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 pub struct SDR {
@@ -224,6 +236,7 @@ impl SDR {
     }
 }
 
+/// Test Synopsis Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -288,6 +301,7 @@ impl TSR {
     }
 }
 
+/// Software Bin Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -322,6 +336,7 @@ impl SBR {
     }
 }
 
+/// Wafer Information Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -350,6 +365,7 @@ impl WIR {
     }
 }
 
+/// Wafer Results Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -408,6 +424,7 @@ impl WRR {
     }
 }
 
+/// Hardware Bin Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -442,6 +459,7 @@ impl HBR {
     }
 }
 
+/// Part Count Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -479,6 +497,7 @@ impl PCR {
     }
 }
 
+/// Part Information Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -497,6 +516,7 @@ impl PIR {
     }
 }
 
+/// Part Results Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -549,6 +569,7 @@ impl PRR {
     }
 }
 
+/// Master Results Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -577,6 +598,7 @@ impl MRR {
     }
 }
 
+/// Parametric Test Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -680,6 +702,7 @@ impl PTR {
     }
 }
 
+/// Functional Test Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
@@ -790,6 +813,7 @@ impl FTR {
 #[allow(dead_code)]
 pub struct NotImplementedRecord {}
 
+/// An enum of all the concrete record types
 #[derive(Debug)]
 pub enum Record {
     FAR(NotImplementedRecord),
