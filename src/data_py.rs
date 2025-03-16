@@ -20,7 +20,7 @@ fn get_stdf(fname: &str) -> PyResult<STDF> {
 }
 
 #[pyfunction]
-fn get_df() -> PyResult<PyDataFrame> {
+fn get_df_test() -> PyResult<PyDataFrame> {
     let df = STDFDataFrame::test().df;
     Ok(PyDataFrame(df))
 }
@@ -39,13 +39,21 @@ fn get_series(fname: &str) -> PyResult<PySeries> {
     Ok(PySeries(series))
 }
 
+#[pyfunction]
+fn get_df(fname: &str) -> PyResult<PyDataFrame> {
+    let test_data = TestData::from_fname(&fname, false)?;
+    let df = STDFDataFrame::new(&test_data).df;
+    Ok(PyDataFrame(df))
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn stupidf(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
     m.add_function(wrap_pyfunction!(get_stdf, m)?)?;
-    m.add_function(wrap_pyfunction!(get_df, m)?)?;
+    m.add_function(wrap_pyfunction!(get_df_test, m)?)?;
     m.add_function(wrap_pyfunction!(get_vec, m)?)?;
     m.add_function(wrap_pyfunction!(get_series, m)?)?;
+    m.add_function(wrap_pyfunction!(get_df, m)?)?;
     Ok(())
 }

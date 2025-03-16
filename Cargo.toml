@@ -11,7 +11,7 @@ crate-type = ["lib", "cdylib"]
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
 itertools = "0.14.0"
-polars = { version = "x", features = [] }
+polars = { version = "x", features = ["dtype-u8", "dtype-u16", "dtype-i16"] }
 chrono = "0.4.40"
 pyo3-polars = "0.20.0"
 pyo3 = "0.23.0"

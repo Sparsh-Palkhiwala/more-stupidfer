@@ -52,6 +52,8 @@ pub struct TestData {
     temp_rows: HashMap<(u8, u8), Row>,
     n_para: usize,
     n_func: usize,
+    reverse_lookup_para: HashMap<usize, u32>,
+    reverse_lookup_func: HashMap<usize, u32>,
 }
 
 impl TestData {
@@ -61,15 +63,19 @@ impl TestData {
         // make lookup table: test_num -> index
         // where index is the index into the corresponding vector in Row
         let mut index_lookup = HashMap::new();
+        let mut reverse_lookup_para = HashMap::new();
+        let mut reverse_lookup_func = HashMap::new();
         let mut n_para: usize = 0;
         let mut n_func: usize = 0;
         for (tnum, mti) in test_information.test_infos.iter().sorted_by_key(|x| x.0) {
             if let TestType::P = mti.test_type {
                 index_lookup.insert(*tnum, n_para);
+                reverse_lookup_para.insert(n_para, *tnum);
                 n_para += 1;
             }
             if let TestType::F = mti.test_type {
                 index_lookup.insert(*tnum, n_func);
+                reverse_lookup_func.insert(n_func, *tnum);
                 n_func += 1;
             }
         }
@@ -84,6 +90,8 @@ impl TestData {
             temp_rows,
             n_para,
             n_func,
+            reverse_lookup_para,
+            reverse_lookup_func,
         }
     }
 
@@ -167,8 +175,8 @@ impl TestData {
 
 #[derive(Debug, IntoPyObject)]
 pub struct STDF {
-    mir: MIR,
-    test_data: TestData,
+    pub mir: MIR,
+    pub test_data: TestData,
 }
 
 impl STDF {
@@ -201,10 +209,67 @@ pub struct STDFDataFrame {
 }
 
 impl STDFDataFrame {
-    //pub fn new(test_data: &TestData) -> Self{
-    //
-    //
-    //}
+    pub fn new(test_data: &TestData) -> Self {
+        let mut part_ids: Vec<String> = Vec::new();
+        let mut x_coords: Vec<i16> = Vec::new();
+        let mut y_coords: Vec<i16> = Vec::new();
+        let mut head_nums: Vec<u8> = Vec::new();
+        let mut sbins: Vec<u16> = Vec::new();
+        let mut hbins: Vec<u16> = Vec::new();
+        let mut para_vecs: HashMap<u32, Vec<f32>> = HashMap::new();
+        let mut func_vecs: HashMap<u32, Vec<bool>> = HashMap::new();
+        let ncols_para = test_data.n_para;
+        let ncols_func = test_data.n_func;
+        for row in &test_data.data {
+            part_ids.push(row.part_id.clone());
+            x_coords.push(row.x_coord);
+            y_coords.push(row.y_coord);
+            head_nums.push(row.head_num);
+            sbins.push(row.sbin);
+            hbins.push(row.hbin);
+            for i in 0..ncols_para {
+                let test_num = test_data.reverse_lookup_para.get(&i).unwrap();
+                para_vecs
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.results_parametric[i]);
+            }
+            for i in 0..ncols_func {
+                let test_num = test_data.reverse_lookup_func.get(&i).unwrap();
+                func_vecs
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.results_functional[i]);
+            }
+        }
+        let mut columns: Vec<Column> = Vec::new();
+        columns.push(Column::new("part_id".into(), part_ids));
+        columns.push(Column::new("x_coords".into(), x_coords));
+        columns.push(Column::new("y_coords".into(), y_coords));
+        columns.push(Column::new("head_nums".into(), head_nums));
+        columns.push(Column::new("sbins".into(), sbins));
+        columns.push(Column::new("hbins".into(), hbins));
+        for (test_num, vec) in para_vecs.iter().sorted_by_key(|x| x.0) {
+            columns.push(Column::new(test_num.to_string().into(), vec));
+        }
+        for (test_num, vec) in func_vecs.iter().sorted_by_key(|x| x.0) {
+            columns.push(Column::new(test_num.to_string().into(), vec));
+        }
+        //let mut series = Vec::new();
+        //for i in 0..ncols_para {
+        //    let vec: Vec<f32> = test_data
+        //        .data
+        //        .iter()
+        //        .map(|x| x.results_parametric[i])
+        //        .collect();
+        //    let serie = Series::new(i.to_string().into(), vec);
+        //    let column = serie.into();
+        //    series.push(column);
+        //}
+        //let df = DataFrame::new(series).unwrap();
+        let df = DataFrame::new(columns).unwrap();
+        Self { df }
+    }
 
     pub fn test() -> Self {
         let df: DataFrame = df!(
