@@ -337,7 +337,7 @@ impl SBR {
 }
 
 /// Wafer Information Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct WIR {

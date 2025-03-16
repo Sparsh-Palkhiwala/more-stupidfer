@@ -7,7 +7,10 @@ use itertools::Itertools;
 use polars::prelude::*;
 use pyo3::IntoPyObject;
 
-use crate::records::{Records, records::MIR};
+use crate::records::{
+    Records,
+    records::{MIR, MRR, WIR, WRR},
+};
 use crate::{
     records::records::{FTR, PIR, PRR, PTR, Record},
     test_information::{FullMergedTestInformation, FullTestInformation, TestType},
@@ -20,6 +23,7 @@ use crate::{
 #[derive(Debug, IntoPyObject)]
 pub struct Row {
     part_id: String,
+    wafer_id: String,
     x_coord: i16,
     y_coord: i16,
     head_num: u8,
@@ -42,9 +46,21 @@ impl Row {
     /// Space for the test results for every test is pre-allocated, but they are stored in a
     /// `Vec` for efficiency. The `test_number` -> index lookup is not contained in the `Row`, so
     /// a higher layer of abstraction (`TestData`) is required to actually add new data.
-    pub fn new(pir: &PIR, num_tests_parametric: usize, num_tests_functional: usize) -> Self {
+    pub fn new(
+        pir: &PIR,
+        num_tests_parametric: usize,
+        num_tests_functional: usize,
+        wir: &Option<WIR>,
+    ) -> Self {
+        let wafer_id: String;
+        if let Some(w) = wir {
+            wafer_id = w.wafer_id.clone();
+        } else {
+            wafer_id = String::new();
+        }
         Self {
             part_id: String::new(),
+            wafer_id,
             x_coord: -5000,
             y_coord: -5000,
             head_num: pir.head_num,
@@ -94,6 +110,8 @@ pub struct TestData {
     reverse_lookup_para: HashMap<usize, u32>,
     // The mapping of index in `Row.results_functional` to `test_num`
     reverse_lookup_func: HashMap<usize, u32>,
+    // The current active wafer
+    wir: Option<WIR>,
 }
 
 impl TestData {
@@ -131,6 +149,7 @@ impl TestData {
             n_func,
             reverse_lookup_para,
             reverse_lookup_func,
+            wir: None,
         }
     }
 
@@ -142,7 +161,7 @@ impl TestData {
     pub fn new_part(&mut self, pir: &PIR) {
         let key = (pir.head_num, pir.site_num);
         if let Vacant(row) = self.temp_rows.entry(key) {
-            row.insert(Row::new(&pir, self.n_para, self.n_func));
+            row.insert(Row::new(&pir, self.n_para, self.n_func, &self.wir));
         } else {
             panic!("opening a specific head_num/site_num before closing the previous one!")
         }
@@ -208,7 +227,25 @@ impl TestData {
         }
     }
 
+    /// Starts a new wafer in the `TestData`
+    ///
+    /// This allows the `wafer_id` field to be populated
+    pub fn new_wafer(&mut self, wir: &WIR) {
+        self.wir = Some(wir.clone());
+    }
+
+    /// Closes out a wafer in the `TestData`
+    ///
+    /// Triggered by receiving a WRR, but no WRR data is needed for the `TestData`, so we do not
+    /// pass in the WRR.
+    pub fn close_wafer(&mut self) {
+        self.wir = None;
+    }
+
     /// Generate the `TestData` from an STDF file specified by `fname`
+    ///
+    /// You should probably prefer to use `STDF::from_fname`, which makes a `TestData` as part of
+    /// its iteration, while also keeping track of the file/wafer-level metadata.
     ///
     /// Optionally allows for printing the record information with the `verbose` flag.
     ///
@@ -226,17 +263,23 @@ impl TestData {
 
         for record in records {
             if let Some(resolved) = record.resolve() {
+                if let Record::WIR(ref wir) = resolved {
+                    test_data.new_wafer(wir);
+                }
                 if let Record::PIR(ref pir) = resolved {
-                    test_data.new_part(&pir);
+                    test_data.new_part(pir);
                 }
                 if let Record::PTR(ref ptr) = resolved {
-                    test_data.add_data_ptr(&ptr);
+                    test_data.add_data_ptr(ptr);
                 }
                 if let Record::FTR(ref ftr) = resolved {
-                    test_data.add_data_ftr(&ftr);
+                    test_data.add_data_ftr(ftr);
                 }
                 if let Record::PRR(ref prr) = resolved {
-                    test_data.finish_part(&prr);
+                    test_data.finish_part(prr);
+                }
+                if let Record::WRR(ref _wrr) = resolved {
+                    test_data.close_wafer();
                 }
             }
         }
@@ -248,6 +291,7 @@ impl TestData {
 impl Into<DataFrame> for &TestData {
     fn into(self) -> DataFrame {
         let mut part_ids: Vec<String> = Vec::new();
+        let mut wafer_ids: Vec<String> = Vec::new();
         let mut x_coords: Vec<i16> = Vec::new();
         let mut y_coords: Vec<i16> = Vec::new();
         let mut head_nums: Vec<u8> = Vec::new();
@@ -259,6 +303,7 @@ impl Into<DataFrame> for &TestData {
         let ncols_func = self.n_func;
         for row in &self.data {
             part_ids.push(row.part_id.clone());
+            wafer_ids.push(row.wafer_id.clone());
             x_coords.push(row.x_coord);
             y_coords.push(row.y_coord);
             head_nums.push(row.head_num);
@@ -281,6 +326,7 @@ impl Into<DataFrame> for &TestData {
         }
         let mut columns: Vec<Column> = Vec::new();
         columns.push(Column::new("part_id".into(), part_ids));
+        columns.push(Column::new("wafer_id".into(), wafer_ids));
         columns.push(Column::new("x_coords".into(), x_coords));
         columns.push(Column::new("y_coords".into(), y_coords));
         columns.push(Column::new("head_nums".into(), head_nums));
@@ -293,7 +339,6 @@ impl Into<DataFrame> for &TestData {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
         DataFrame::new(columns).unwrap()
-        //
     }
 }
 
@@ -313,6 +358,9 @@ impl Into<DataFrame> for &TestData {
 pub struct STDF {
     /// The STDF file metadata
     pub mir: MIR,
+    pub mrr: MRR,
+    pub wirs: Vec<WIR>,
+    pub wrrs: Vec<WRR>,
     /// The test results and test information metadata
     pub test_data: TestData,
 }
@@ -334,8 +382,60 @@ impl STDF {
     /// # Error
     /// If for some reason the file cannot be parsed, returns an `std::io::Error`
     pub fn from_fname(fname: &str, verbose: bool) -> std::io::Result<Self> {
-        let mir = MIR::from_fname(&fname)?;
-        let test_data = TestData::from_fname(&fname, verbose)?;
-        Ok(Self { mir, test_data })
+        let test_info = FullTestInformation::from_fname(fname, verbose)?;
+        let mut test_data = TestData::new(test_info);
+        let mut wirs = Vec::new();
+        let mut wrrs = Vec::new();
+        let records = Records::new(&fname)?;
+
+        let mut opt_mir: Option<MIR> = None;
+        let mut opt_mrr: Option<MRR> = None;
+        for record in records {
+            if let Some(resolved) = record.resolve() {
+                match resolved {
+                    Record::MIR(rec) => {
+                        opt_mir = Some(rec);
+                    }
+                    Record::MRR(rec) => {
+                        opt_mrr = Some(rec);
+                    }
+                    Record::WIR(wir) => {
+                        test_data.new_wafer(&wir);
+                        wirs.push(wir);
+                    }
+                    Record::WRR(wrr) => {
+                        test_data.close_wafer();
+                        wrrs.push(wrr);
+                    }
+                    Record::PIR(ref pir) => {
+                        test_data.new_part(pir);
+                    }
+                    Record::PTR(ref ptr) => {
+                        test_data.add_data_ptr(ptr);
+                    }
+                    Record::FTR(ref ftr) => {
+                        test_data.add_data_ftr(ftr);
+                    }
+                    Record::PRR(ref prr) => {
+                        test_data.finish_part(prr);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        if let (Some(mir), Some(mrr)) = (opt_mir, opt_mrr) {
+            Ok(Self {
+                mir,
+                mrr,
+                wirs,
+                wrrs,
+                test_data,
+            })
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("Failed to parse {fname}! MIR or MRR missing."),
+            ))
+        }
     }
 }

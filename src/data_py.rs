@@ -10,7 +10,11 @@
 //! ```
 use std::collections::HashMap;
 
-use crate::{data::STDF, records::records::MIR, test_information::TestInformation};
+use crate::{
+    data::STDF,
+    records::records::{MIR, MRR, WIR, WRR},
+    test_information::TestInformation,
+};
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
 
@@ -18,6 +22,9 @@ use pyo3_polars::PyDataFrame;
 #[derive(IntoPyObject)]
 struct PySTDF {
     mir: MIR,
+    mrr: MRR,
+    wirs: Vec<WIR>,
+    wrrs: Vec<WRR>,
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
     df: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
@@ -35,6 +42,9 @@ impl PySTDF {
     fn from_fname(fname: &str) -> std::io::Result<Self> {
         let stdf = STDF::from_fname(&fname, false)?;
         let mir = stdf.mir;
+        let mrr = stdf.mrr;
+        let wirs = stdf.wirs;
+        let wrrs = stdf.wrrs;
         let test_data = &stdf.test_data;
         let test_info = &test_data.test_information;
         let df = PyDataFrame(test_data.into());
@@ -42,6 +52,9 @@ impl PySTDF {
         let full_test_information = stdf.test_data.full_test_information.test_infos;
         Ok(Self {
             mir,
+            mrr,
+            wirs,
+            wrrs,
             df,
             test_information,
             full_test_information,
