@@ -1,5 +1,6 @@
 use clap::Parser;
 
+use polars::frame::DataFrame;
 use stupidf::data::{STDF, STDFDataFrame};
 
 #[derive(Parser)]
@@ -21,6 +22,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         let df = STDFDataFrame::new(&stdf.test_data);
         println!("{df:#?}");
+
+        let df_fmti: DataFrame = (&stdf.test_data.test_information).into();
+        println!("{df_fmti}");
     } else {
         eprintln!("Failed to parse file {fname}");
         Err("Failed to parse file {fnames}")?;

@@ -1,11 +1,43 @@
+use std::collections::HashMap;
+
 use crate::{
-    data::{STDFDataFrame, TestData, make_series, make_vec},
+    data::{STDF, STDFDataFrame},
     records::records::MIR,
+    test_information::{MergedTestInformation, TestInformation},
 };
 use pyo3::prelude::*;
-use pyo3_polars::{PyDataFrame, PySeries};
+use pyo3_polars::PyDataFrame;
 
-use crate::data::STDF;
+#[derive(IntoPyObject)]
+struct PySTDF {
+    mir: MIR,
+    df: PyDataFrame,
+    test_information: PyDataFrame,
+    // #TODO add the FullTestInformation hashmap
+    full_test_information: HashMap<(u32, u8, u8), TestInformation>,
+}
+
+impl PySTDF {
+    fn from_fname(fname: &str) -> std::io::Result<Self> {
+        let stdf = STDF::from_fname(&fname, false)?;
+        let mir = stdf.mir;
+        let df = PyDataFrame(STDFDataFrame::new(&stdf.test_data).df);
+        let test_information = PyDataFrame((&stdf.test_data.test_information).into());
+        let full_test_information = stdf.test_data.full_test_information.test_infos;
+        Ok(Self {
+            mir,
+            df,
+            test_information,
+            full_test_information,
+        })
+    }
+}
+
+#[pyfunction]
+fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
+    let pystdf = PySTDF::from_fname(&fname)?;
+    Ok(pystdf)
+}
 
 #[pyfunction]
 fn get_mir(fname: &str) -> PyResult<MIR> {
@@ -13,47 +45,9 @@ fn get_mir(fname: &str) -> PyResult<MIR> {
     Ok(mir)
 }
 
-#[pyfunction]
-fn get_stdf(fname: &str) -> PyResult<STDF> {
-    let stdf = STDF::from_fname(&fname, false)?;
-    Ok(stdf)
-}
-
-#[pyfunction]
-fn get_df_test() -> PyResult<PyDataFrame> {
-    let df = STDFDataFrame::test().df;
-    Ok(PyDataFrame(df))
-}
-
-#[pyfunction]
-fn get_vec(fname: &str) -> PyResult<Vec<f32>> {
-    let test_data = TestData::from_fname(&fname, false)?;
-    let series = make_vec(&test_data);
-    Ok(series)
-}
-
-#[pyfunction]
-fn get_series(fname: &str) -> PyResult<PySeries> {
-    let test_data = TestData::from_fname(&fname, false)?;
-    let series = make_series(&test_data);
-    Ok(PySeries(series))
-}
-
-#[pyfunction]
-fn get_df(fname: &str) -> PyResult<PyDataFrame> {
-    let test_data = TestData::from_fname(&fname, false)?;
-    let df = STDFDataFrame::new(&test_data).df;
-    Ok(PyDataFrame(df))
-}
-
-/// A Python module implemented in Rust.
 #[pymodule]
 fn stupidf(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
-    m.add_function(wrap_pyfunction!(get_stdf, m)?)?;
-    m.add_function(wrap_pyfunction!(get_df_test, m)?)?;
-    m.add_function(wrap_pyfunction!(get_vec, m)?)?;
-    m.add_function(wrap_pyfunction!(get_series, m)?)?;
-    m.add_function(wrap_pyfunction!(get_df, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_stdf, m)?)?;
     Ok(())
 }

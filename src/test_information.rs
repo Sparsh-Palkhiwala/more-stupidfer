@@ -3,12 +3,15 @@ use crate::records::Records;
 use crate::records::records::PTR;
 use crate::records::records::Record;
 use crate::records::records::TSR;
+use polars::frame::DataFrame;
+use polars::prelude::Column;
 use pyo3::Bound;
 use pyo3::IntoPyObject;
 use pyo3::Python;
 use pyo3::types::PyString;
 use std::collections::HashMap;
 use std::convert::Infallible;
+use std::fmt;
 
 #[derive(Debug, IntoPyObject)]
 pub struct TestInformation {
@@ -174,6 +177,12 @@ pub enum TestType {
     M,
     S,
     Unknown,
+}
+
+impl fmt::Display for TestType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl<'py> IntoPyObject<'py> for TestType {
@@ -368,6 +377,7 @@ impl MergedTestInformation {
             units,
         }
     }
+
     pub fn add(&mut self, test_information: &TestInformation) {
         if self.test_num != test_information.test_num {
             panic!("TestInformation.test_num does not match that of MergedTestInformation!")
@@ -402,5 +412,62 @@ impl FullMergedTestInformation {
             .filter(|&mti| mti.test_type == test_type)
             .collect::<Vec<_>>()
             .len()
+    }
+}
+
+//pub struct MergedTestInformation {
+//    pub test_num: u32,
+//    pub test_type: TestType,
+//    pub execution_count: u32,
+//    pub test_name: String,
+//    pub sequence_name: String,
+//    pub test_label: String,
+//    pub test_time: f32,
+//    pub test_text: String,
+//    pub low_limit: f32,
+//    pub high_limit: f32,
+//    pub units: String,
+impl Into<DataFrame> for &FullMergedTestInformation {
+    fn into(self) -> DataFrame {
+        let mut test_nums: Vec<u32> = Vec::new();
+        let mut test_types: Vec<String> = Vec::new();
+        let mut execution_counts: Vec<u32> = Vec::new();
+        let mut test_names: Vec<String> = Vec::new();
+        let mut sequence_names: Vec<String> = Vec::new();
+        let mut test_labels: Vec<String> = Vec::new();
+        let mut test_times: Vec<f32> = Vec::new();
+        let mut test_texts: Vec<String> = Vec::new();
+        let mut low_limits: Vec<f32> = Vec::new();
+        let mut high_limits: Vec<f32> = Vec::new();
+        let mut unitss: Vec<String> = Vec::new();
+
+        for (tnum, mti) in &self.test_infos {
+            test_nums.push(*tnum);
+            test_types.push(mti.test_type.to_string());
+            execution_counts.push(mti.execution_count);
+            test_names.push(mti.test_name.clone());
+            sequence_names.push(mti.sequence_name.clone());
+            test_labels.push(mti.test_label.clone());
+            test_times.push(mti.test_time);
+            test_texts.push(mti.test_text.clone());
+            low_limits.push(mti.low_limit);
+            high_limits.push(mti.high_limit);
+            unitss.push(mti.units.clone());
+        }
+
+        let mut columns: Vec<Column> = Vec::new();
+        columns.push(Column::new("test_num".into(), test_nums));
+        columns.push(Column::new("test_type".into(), test_types));
+        columns.push(Column::new("execution_count".into(), execution_counts));
+        columns.push(Column::new("test_name".into(), test_names));
+        columns.push(Column::new("sequence_name".into(), sequence_names));
+        columns.push(Column::new("test_label".into(), test_labels));
+        columns.push(Column::new("test_time".into(), test_times));
+        columns.push(Column::new("test_text".into(), test_texts));
+        columns.push(Column::new("low_limit".into(), low_limits));
+        columns.push(Column::new("high_limit".into(), high_limits));
+        columns.push(Column::new("units".into(), unitss));
+
+        DataFrame::new(columns).unwrap()
     }
 }

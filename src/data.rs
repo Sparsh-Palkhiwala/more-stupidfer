@@ -1,4 +1,3 @@
-use chrono::prelude::*;
 use std::collections::{
     HashMap,
     hash_map::Entry::{Occupied, Vacant},
@@ -173,6 +172,12 @@ impl TestData {
     }
 }
 
+impl Into<DataFrame> for TestData {
+    fn into(self) -> DataFrame {
+        //
+    }
+}
+
 #[derive(Debug, IntoPyObject)]
 pub struct STDF {
     pub mir: MIR,
@@ -255,35 +260,7 @@ impl STDFDataFrame {
         for (test_num, vec) in func_vecs.iter().sorted_by_key(|x| x.0) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
-        //let mut series = Vec::new();
-        //for i in 0..ncols_para {
-        //    let vec: Vec<f32> = test_data
-        //        .data
-        //        .iter()
-        //        .map(|x| x.results_parametric[i])
-        //        .collect();
-        //    let serie = Series::new(i.to_string().into(), vec);
-        //    let column = serie.into();
-        //    series.push(column);
-        //}
-        //let df = DataFrame::new(series).unwrap();
         let df = DataFrame::new(columns).unwrap();
-        Self { df }
-    }
-
-    pub fn test() -> Self {
-        let df: DataFrame = df!(
-            "name" => ["Alice Archer", "Ben Brown", "Chloe Cooper", "Daniel Donovan"],
-            "birthdate" => [
-                NaiveDate::from_ymd_opt(1997, 1, 10).unwrap(),
-                NaiveDate::from_ymd_opt(1985, 2, 15).unwrap(),
-                NaiveDate::from_ymd_opt(1983, 3, 22).unwrap(),
-                NaiveDate::from_ymd_opt(1981, 4, 30).unwrap(),
-            ],
-            "weight" => [57.9, 72.5, 53.6, 83.1],  // (kg)
-            "height" => [1.56, 1.77, 1.65, 1.75],  // (m)
-        )
-        .unwrap();
         Self { df }
     }
 }
