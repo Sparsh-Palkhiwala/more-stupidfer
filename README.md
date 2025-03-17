@@ -8,9 +8,16 @@ STDF is the [Standard Test Data Format](https://en.wikipedia.org/wiki/Standard_T
 
 The purpose of the library is to quickly and efficiently parse STDF files (which are a fairly unfriendly binary linked list-based format) into more friendly [polars](https://pola.rs/) [DataFrame](https://docs.pola.rs/user-guide/concepts/data-types-and-structures/#dataframe) format. 
 
+Not all record types are implemented because they're not relevant for my purposes. Implementing new records is straight-forward, following the others. 
+
 # Example
 
+In rust
+
 ```
+use stupidf::data::STDF;
+use polars::prelude::*;
+
 let verbose = false;
 if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
     let df: DataFrame = (&stdf.test_data).into();
@@ -30,9 +37,27 @@ Also contains Python bindings to this functionality, e.g.
 
 # Installation
 
-The rust library can be compiled simply wtih
+To install the rust CLI binary:
 
-```cargo build --deveop```
+```cargo install stupidf```
+
+To add the `stupidf` library to a rust project, add to the `Cargol.toml`:
+
+```
+[dependencies]
+<... snip ...>
+stupidf = "0.1.0"
+```
+
+To install the Python bindings and pre-built wheel (linux only currently):
+
+```pip install stupidf```
+
+## Building from source
+
+The rust library can be compiled simply with
+
+```cargo build --develop```
 
 Docs can be built and viewed with
 
@@ -41,8 +66,9 @@ cargo docs
 cargo docs --open
 ```
 
-The Python bindings can be made using [`maturin`](https://www.maturin.rs/). Activate the desired virtualenv, then run
+The Python bindings can be made using [`maturin`](https://www.maturin.rs/). Activate the desired virtualenv, then install `maturin` and use it to build the bindings
 
 ```
+pip install maturin
 maturin develop
 ```

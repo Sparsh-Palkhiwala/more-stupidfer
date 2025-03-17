@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use crate::{
     data::{MasterInformation, STDF, WaferInformation},
-    records::records::MIR,
+    records::records::*,
     test_information::TestInformation,
 };
 use pyo3::prelude::*;
@@ -24,7 +24,13 @@ struct PySTDF {
     /// MIR and MRR information
     metadata: MasterInformation,
     /// WIR and WRR information
-    wafer_information: Vec<WaferInformation>,
+    wafers: Vec<WaferInformation>,
+    /// The site information
+    site_information: SDR,
+    /// The soft-bin information
+    soft_bins: HashMap<u16, SBR>,
+    /// The hard-bin information
+    hard_bins: HashMap<u16, HBR>,
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
     df: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
@@ -43,6 +49,9 @@ impl PySTDF {
         let stdf = STDF::from_fname(&fname, false)?;
         let metadata = stdf.master_information.clone();
         let wafers = stdf.wafer_information.clone();
+        let site_information = stdf.site_information.clone();
+        let soft_bins = stdf.soft_bins.clone();
+        let hard_bins = stdf.hard_bins.clone();
         let test_data = &stdf.test_data;
         let test_info = &test_data.test_information;
         let df = PyDataFrame(test_data.into());
@@ -50,7 +59,10 @@ impl PySTDF {
         let full_test_information = stdf.test_data.full_test_information.test_infos;
         Ok(Self {
             metadata,
-            wafer_information: wafers,
+            wafers,
+            site_information,
+            soft_bins,
+            hard_bins,
             df,
             test_information,
             full_test_information,

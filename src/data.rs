@@ -7,10 +7,7 @@ use itertools::Itertools;
 use polars::prelude::*;
 use pyo3::IntoPyObject;
 
-use crate::records::{
-    Records,
-    records::{MIR, MRR, WIR, WRR},
-};
+use crate::records::{Records, records::*};
 use crate::{
     records::records::{FTR, PIR, PRR, PTR, Record},
     test_information::{FullMergedTestInformation, FullTestInformation, TestType},
@@ -502,12 +499,14 @@ impl WaferInformation {
 pub struct STDF {
     /// The STDF file metadata
     pub master_information: MasterInformation,
-    //pub mir: MIR,
     ///// The STDF file metadata
-    //pub mrr: MRR,
     pub wafer_information: Vec<WaferInformation>,
-    //pub wirs: Vec<WIR>,
-    //pub wrrs: Vec<WRR>,
+    /// The site information
+    pub site_information: SDR,
+    /// Soft bin information indexed by soft bin number
+    pub soft_bins: HashMap<u16, SBR>,
+    /// Hard bin information indexed by hard bin number
+    pub hard_bins: HashMap<u16, HBR>,
     /// The test results and test information metadata
     pub test_data: TestData,
 }
@@ -533,18 +532,30 @@ impl STDF {
         let mut test_data = TestData::new(test_info);
         let mut wirs = Vec::new();
         let mut wrrs = Vec::new();
+        let mut soft_bins = HashMap::new();
+        let mut hard_bins = HashMap::new();
         let records = Records::new(&fname)?;
 
         let mut opt_mir: Option<MIR> = None;
         let mut opt_mrr: Option<MRR> = None;
+        let mut opt_sdr: Option<SDR> = None;
         for record in records {
             if let Some(resolved) = record.resolve() {
                 match resolved {
-                    Record::MIR(rec) => {
-                        opt_mir = Some(rec);
+                    Record::MIR(mir) => {
+                        opt_mir = Some(mir);
                     }
-                    Record::MRR(rec) => {
-                        opt_mrr = Some(rec);
+                    Record::MRR(mrr) => {
+                        opt_mrr = Some(mrr);
+                    }
+                    Record::SDR(sdr) => {
+                        opt_sdr = Some(sdr);
+                    }
+                    Record::SBR(sbr) => {
+                        soft_bins.insert(sbr.sbin_num, sbr);
+                    }
+                    Record::HBR(hbr) => {
+                        hard_bins.insert(hbr.hbin_num, hbr);
                     }
                     Record::WIR(wir) => {
                         test_data.new_wafer(&wir);
@@ -570,7 +581,7 @@ impl STDF {
                 }
             }
         }
-        if let (Some(mir), Some(mrr)) = (opt_mir, opt_mrr) {
+        if let (Some(mir), Some(mrr), Some(site_information)) = (opt_mir, opt_mrr, opt_sdr) {
             let master_information = MasterInformation::new(mir, mrr);
             let wafer_information = wirs
                 .into_iter()
@@ -580,6 +591,9 @@ impl STDF {
             Ok(Self {
                 master_information,
                 wafer_information,
+                site_information,
+                soft_bins,
+                hard_bins,
                 test_data,
             })
         } else {

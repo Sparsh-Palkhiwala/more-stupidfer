@@ -163,7 +163,7 @@ impl MIR {
 }
 
 /// Site Description Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 pub struct SDR {
     pub head_num: u8,
@@ -304,7 +304,7 @@ impl From<&RawRecord> for TSR {
 }
 
 /// Software Bin Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct SBR {
@@ -427,7 +427,7 @@ impl From<&RawRecord> for WRR {
 }
 
 /// Hardware Bin Record
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, Clone, IntoPyObject)]
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct HBR {
