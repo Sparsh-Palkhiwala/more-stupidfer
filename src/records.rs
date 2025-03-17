@@ -88,24 +88,37 @@ impl RawRecord {
     /// Resolve a `RawRecord` into a concrete record type
     ///
     /// The record type is already contained in the `RawRecord`, so can immediately resolve to the
-    /// conrete record.
+    /// conrete record without hitting the file again.
     ///
     /// Resolving is the most expensive part of the process, so it is done only on-demand.
     pub fn resolve(&self) -> Option<Record> {
         match self.rtype {
-            RecordType::MIR => Some(Record::MIR(MIR::from_raw_record(&self))),
-            RecordType::SDR => Some(Record::SDR(SDR::from_raw_record(&self))),
-            RecordType::TSR => Some(Record::TSR(TSR::from_raw_record(&self))),
-            RecordType::SBR => Some(Record::SBR(SBR::from_raw_record(&self))),
-            RecordType::HBR => Some(Record::HBR(HBR::from_raw_record(&self))),
-            RecordType::PCR => Some(Record::PCR(PCR::from_raw_record(&self))),
-            RecordType::MRR => Some(Record::MRR(MRR::from_raw_record(&self))),
-            RecordType::PIR => Some(Record::PIR(PIR::from_raw_record(&self))),
-            RecordType::PRR => Some(Record::PRR(PRR::from_raw_record(&self))),
-            RecordType::WIR => Some(Record::WIR(WIR::from_raw_record(&self))),
-            RecordType::WRR => Some(Record::WRR(WRR::from_raw_record(&self))),
-            RecordType::PTR => Some(Record::PTR(PTR::from_raw_record(&self))),
-            RecordType::FTR => Some(Record::FTR(FTR::from_raw_record(&self))),
+            //RecordType::MIR => Some(Record::MIR(MIR::from_raw_record(&self))),
+            //RecordType::SDR => Some(Record::SDR(SDR::from_raw_record(&self))),
+            //RecordType::TSR => Some(Record::TSR(TSR::from_raw_record(&self))),
+            //RecordType::SBR => Some(Record::SBR(SBR::from_raw_record(&self))),
+            //RecordType::HBR => Some(Record::HBR(HBR::from_raw_record(&self))),
+            //RecordType::PCR => Some(Record::PCR(PCR::from_raw_record(&self))),
+            //RecordType::MRR => Some(Record::MRR(MRR::from_raw_record(&self))),
+            //RecordType::PIR => Some(Record::PIR(PIR::from_raw_record(&self))),
+            //RecordType::PRR => Some(Record::PRR(PRR::from_raw_record(&self))),
+            //RecordType::WIR => Some(Record::WIR(WIR::from_raw_record(&self))),
+            //RecordType::WRR => Some(Record::WRR(WRR::from_raw_record(&self))),
+            //RecordType::PTR => Some(Record::PTR(PTR::from_raw_record(&self))),
+            //RecordType::FTR => Some(Record::FTR(FTR::from_raw_record(&self))),
+            RecordType::MIR => Some(Record::MIR(self.into())),
+            RecordType::SDR => Some(Record::SDR(self.into())),
+            RecordType::TSR => Some(Record::TSR(self.into())),
+            RecordType::SBR => Some(Record::SBR(self.into())),
+            RecordType::HBR => Some(Record::HBR(self.into())),
+            RecordType::PCR => Some(Record::PCR(self.into())),
+            RecordType::MRR => Some(Record::MRR(self.into())),
+            RecordType::PIR => Some(Record::PIR(self.into())),
+            RecordType::PRR => Some(Record::PRR(self.into())),
+            RecordType::WIR => Some(Record::WIR(self.into())),
+            RecordType::WRR => Some(Record::WRR(self.into())),
+            RecordType::PTR => Some(Record::PTR(self.into())),
+            RecordType::FTR => Some(Record::FTR(self.into())),
             _ => None,
         }
     }

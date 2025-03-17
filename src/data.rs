@@ -342,6 +342,150 @@ impl Into<DataFrame> for &TestData {
     }
 }
 
+#[derive(Debug, IntoPyObject, Clone)]
+pub struct MasterInformation {
+    // MIR records follow
+    pub setup_t: u32,
+    pub start_t: u32,
+    pub stat_num: u8,
+    pub mode_cod: char,
+    pub rtst_cod: char,
+    pub prot_cod: char,
+    pub burn_tim: u16,
+    pub cmod_cod: char,
+    pub lot_id: String,
+    pub part_typ: String,
+    pub node_nam: String,
+    pub tstr_typ: String,
+    pub job_nam: String,
+    pub job_rev: String,
+    pub sblot_id: String,
+    pub oper_nam: String,
+    pub exec_typ: String,
+    pub exec_ver: String,
+    pub test_cod: String,
+    pub tst_temp: String,
+    pub user_txt: String,
+    pub aux_file: String,
+    pub pkg_typ: String,
+    pub famly_id: String,
+    pub date_cod: String,
+    pub facil_id: String,
+    pub floor_id: String,
+    pub proc_id: String,
+    pub oper_frq: String,
+    pub spec_nam: String,
+    pub spec_ver: String,
+    pub flow_id: String,
+    pub setup_id: String,
+    pub dsgn_rev: String,
+    pub eng_id: String,
+    pub rom_cod: String,
+    pub serl_num: String,
+    pub supr_nam: String,
+    // MRR records follow
+    pub finish_t: u32,
+    pub disp_cod: char,
+    pub usr_desc: String,
+    pub exc_desc: String,
+}
+
+impl MasterInformation {
+    pub fn new(mir: MIR, mrr: MRR) -> Self {
+        Self {
+            // MIR records follow
+            setup_t: mir.setup_t,
+            start_t: mir.start_t,
+            stat_num: mir.stat_num,
+            mode_cod: mir.mode_cod,
+            rtst_cod: mir.rtst_cod,
+            prot_cod: mir.prot_cod,
+            burn_tim: mir.burn_tim,
+            cmod_cod: mir.cmod_cod,
+            lot_id: mir.lot_id,
+            part_typ: mir.part_typ,
+            node_nam: mir.node_nam,
+            tstr_typ: mir.tstr_typ,
+            job_nam: mir.job_nam,
+            job_rev: mir.job_rev,
+            sblot_id: mir.sblot_id,
+            oper_nam: mir.oper_nam,
+            exec_typ: mir.exec_typ,
+            exec_ver: mir.exec_ver,
+            test_cod: mir.test_cod,
+            tst_temp: mir.tst_temp,
+            user_txt: mir.user_txt,
+            aux_file: mir.aux_file,
+            pkg_typ: mir.pkg_typ,
+            famly_id: mir.famly_id,
+            date_cod: mir.date_cod,
+            facil_id: mir.facil_id,
+            floor_id: mir.floor_id,
+            proc_id: mir.proc_id,
+            oper_frq: mir.oper_frq,
+            spec_nam: mir.spec_nam,
+            spec_ver: mir.spec_ver,
+            flow_id: mir.flow_id,
+            setup_id: mir.setup_id,
+            dsgn_rev: mir.dsgn_rev,
+            eng_id: mir.eng_id,
+            rom_cod: mir.rom_cod,
+            serl_num: mir.serl_num,
+            supr_nam: mir.supr_nam,
+            // MRR records follow
+            finish_t: mrr.finish_t,
+            disp_cod: mrr.disp_cod,
+            usr_desc: mrr.usr_desc,
+            exc_desc: mrr.exc_desc,
+        }
+    }
+}
+
+#[derive(Debug, IntoPyObject, Clone)]
+pub struct WaferInformation {
+    // From WIR
+    pub head_num: u8,
+    pub site_grp: u8,
+    pub start_t: u32,
+    // From WRR below
+    pub wafer_id: String,
+    pub finish_t: u32,
+    pub part_cnt: u32,
+    pub rtst_cnt: u32,
+    pub abrt_cnt: u32,
+    pub good_cnt: u32,
+    pub func_cnt: u32,
+    pub fabwf_id: String,
+    pub frame_id: String,
+    pub mask_id: String,
+    pub usr_desc: String,
+    pub exc_desc: String,
+}
+
+impl WaferInformation {
+    pub fn new(wir: WIR, wrr: WRR) -> Self {
+        Self {
+            // From WIR
+            head_num: wir.head_num,
+            site_grp: wir.site_grp,
+            start_t: wir.start_t,
+            // From WRR below
+            wafer_id: wrr.wafer_id,
+            finish_t: wrr.finish_t,
+            part_cnt: wrr.part_cnt,
+            rtst_cnt: wrr.rtst_cnt,
+            abrt_cnt: wrr.abrt_cnt,
+            good_cnt: wrr.good_cnt,
+            func_cnt: wrr.func_cnt,
+            fabwf_id: wrr.fabwf_id,
+            frame_id: wrr.frame_id,
+            mask_id: wrr.mask_id,
+            usr_desc: wrr.usr_desc,
+            exc_desc: wrr.exc_desc,
+        }
+    }
+}
+
 /// `STDF` contains the STDF file metadata (`mir`) and the test results data (`test_data`)
 ///
 /// # Example
@@ -357,10 +501,13 @@ impl Into<DataFrame> for &TestData {
 #[derive(Debug, IntoPyObject)]
 pub struct STDF {
     /// The STDF file metadata
-    pub mir: MIR,
-    pub mrr: MRR,
-    pub wirs: Vec<WIR>,
-    pub wrrs: Vec<WRR>,
+    pub master_information: MasterInformation,
+    //pub mir: MIR,
+    ///// The STDF file metadata
+    //pub mrr: MRR,
+    pub wafer_information: Vec<WaferInformation>,
+    //pub wirs: Vec<WIR>,
+    //pub wrrs: Vec<WRR>,
     /// The test results and test information metadata
     pub test_data: TestData,
 }
@@ -424,11 +571,15 @@ impl STDF {
             }
         }
         if let (Some(mir), Some(mrr)) = (opt_mir, opt_mrr) {
+            let master_information = MasterInformation::new(mir, mrr);
+            let wafer_information = wirs
+                .into_iter()
+                .zip(wrrs.into_iter())
+                .map(|(wir, wrr)| WaferInformation::new(wir, wrr))
+                .collect();
             Ok(Self {
-                mir,
-                mrr,
-                wirs,
-                wrrs,
+                master_information,
+                wafer_information,
                 test_data,
             })
         } else {

@@ -11,8 +11,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    data::STDF,
-    records::records::{MIR, MRR, WIR, WRR},
+    data::{MasterInformation, STDF, WaferInformation},
+    records::records::MIR,
     test_information::TestInformation,
 };
 use pyo3::prelude::*;
@@ -21,10 +21,10 @@ use pyo3_polars::PyDataFrame;
 /// A wrapper for the STDF suitable for throwing across the barrier to Python land
 #[derive(IntoPyObject)]
 struct PySTDF {
-    mir: MIR,
-    mrr: MRR,
-    wirs: Vec<WIR>,
-    wrrs: Vec<WRR>,
+    /// MIR and MRR information
+    metadata: MasterInformation,
+    /// WIR and WRR information
+    wafer_information: Vec<WaferInformation>,
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
     df: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
@@ -41,20 +41,16 @@ impl PySTDF {
     /// Analagous to `STDF::from_fname`
     fn from_fname(fname: &str) -> std::io::Result<Self> {
         let stdf = STDF::from_fname(&fname, false)?;
-        let mir = stdf.mir;
-        let mrr = stdf.mrr;
-        let wirs = stdf.wirs;
-        let wrrs = stdf.wrrs;
+        let metadata = stdf.master_information.clone();
+        let wafers = stdf.wafer_information.clone();
         let test_data = &stdf.test_data;
         let test_info = &test_data.test_information;
         let df = PyDataFrame(test_data.into());
         let test_information = PyDataFrame(test_info.into());
         let full_test_information = stdf.test_data.full_test_information.test_infos;
         Ok(Self {
-            mir,
-            mrr,
-            wirs,
-            wrrs,
+            metadata,
+            wafer_information: wafers,
             df,
             test_information,
             full_test_information,

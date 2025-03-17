@@ -48,8 +48,8 @@ pub struct MIR {
     pub supr_nam: String,
 }
 
-impl MIR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for MIR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let setup_t = U4(contents, &mut offset);
@@ -132,7 +132,9 @@ impl MIR {
             supr_nam,
         }
     }
+}
 
+impl MIR {
     /// Get the MIR from a file at `fname`
     ///
     /// Opens the file from scratch and grabs the MIR rather than re-use some open file handle.
@@ -186,8 +188,8 @@ pub struct SDR {
     pub extr_i: String,
 }
 
-impl SDR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for SDR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -259,8 +261,8 @@ pub struct TSR {
     pub tst_sqrs: f32,
 }
 
-impl TSR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for TSR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -314,8 +316,8 @@ pub struct SBR {
     pub sbin_nam: String,
 }
 
-impl SBR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for SBR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -347,8 +349,8 @@ pub struct WIR {
     pub wafer_id: String,
 }
 
-impl WIR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for WIR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -386,8 +388,8 @@ pub struct WRR {
     pub exc_desc: String,
 }
 
-impl WRR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for WRR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -437,8 +439,8 @@ pub struct HBR {
     pub hbin_nam: String,
 }
 
-impl HBR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for HBR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -473,8 +475,8 @@ pub struct PCR {
     pub func_cnt: u32,
 }
 
-impl PCR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for PCR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -506,8 +508,8 @@ pub struct PIR {
     pub site_num: u8,
 }
 
-impl PIR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for PIR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let head_num = contents[0];
         let site_num = contents[1];
@@ -535,8 +537,8 @@ pub struct PRR {
     pub part_fix: Vec<u8>,
 }
 
-impl PRR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for PRR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let head_num = U1(contents, &mut offset);
@@ -580,8 +582,8 @@ pub struct MRR {
     pub exc_desc: String,
 }
 
-impl MRR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for MRR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let finish_t = U4(contents, &mut offset);
@@ -625,8 +627,8 @@ pub struct PTR {
     pub hi_spec: f32,
 }
 
-impl PTR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for PTR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let test_num = U4(contents, &mut offset);
@@ -737,8 +739,8 @@ pub struct FTR {
     pub spin_map: Vec<u8>, // Dn type (first 2 bytes length)
 }
 
-impl FTR {
-    pub fn from_raw_record(record: &RawRecord) -> Self {
+impl From<&RawRecord> for FTR {
+    fn from(record: &RawRecord) -> Self {
         let contents = &record.contents;
         let mut offset: usize = 0;
         let test_num = U4(contents, &mut offset);
@@ -801,7 +803,9 @@ impl FTR {
             spin_map,
         }
     }
+}
 
+impl FTR {
     pub fn get_passfail(&self) -> bool {
         let test_flg = self.test_flg;
         // don't bother checking the other flags
