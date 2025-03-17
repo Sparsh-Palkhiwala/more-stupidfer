@@ -28,9 +28,9 @@ struct PySTDF {
     /// The site information
     site_information: SDR,
     /// The soft-bin information
-    soft_bins: HashMap<u16, SBR>,
+    soft_bins: PyDataFrame,
     /// The hard-bin information
-    hard_bins: HashMap<u16, HBR>,
+    hard_bins: PyDataFrame,
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
     df: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
@@ -50,8 +50,8 @@ impl PySTDF {
         let metadata = stdf.master_information.clone();
         let wafers = stdf.wafer_information.clone();
         let site_information = stdf.site_information.clone();
-        let soft_bins = stdf.soft_bins.clone();
-        let hard_bins = stdf.hard_bins.clone();
+        let soft_bins = PyDataFrame(stdf.soft_bins_to_df());
+        let hard_bins = PyDataFrame(stdf.hard_bins_to_df());
         let test_data = &stdf.test_data;
         let test_info = &test_data.test_information;
         let df = PyDataFrame(test_data.into());

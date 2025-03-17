@@ -603,4 +603,60 @@ impl STDF {
             ))
         }
     }
+
+    /// Convert the HashMap `soft_bins` into a `DataFrame` format
+    pub fn soft_bins_to_df(&self) -> DataFrame {
+        let mut head_nums: Vec<u8> = Vec::new();
+        let mut site_nums: Vec<u8> = Vec::new();
+        let mut sbin_nums: Vec<u16> = Vec::new();
+        let mut sbin_cnts: Vec<u32> = Vec::new();
+        let mut sbin_pfs: Vec<String> = Vec::new();
+        let mut sbin_nams: Vec<String> = Vec::new();
+
+        for sbin in self.soft_bins.values() {
+            head_nums.push(sbin.head_num);
+            site_nums.push(sbin.site_num);
+            sbin_nums.push(sbin.sbin_num);
+            sbin_cnts.push(sbin.sbin_cnt);
+            sbin_pfs.push(sbin.sbin_pf.to_string());
+            sbin_nams.push(sbin.sbin_nam.clone());
+        }
+        let mut columns = Vec::new();
+        columns.push(Column::new("sbin_num".into(), sbin_nums));
+        columns.push(Column::new("head_num".into(), head_nums));
+        columns.push(Column::new("site_num".into(), site_nums));
+        columns.push(Column::new("sbin_cnt".into(), sbin_cnts));
+        columns.push(Column::new("sbin_pf".into(), sbin_pfs));
+        columns.push(Column::new("sbin_nam".into(), sbin_nams));
+
+        DataFrame::new(columns).unwrap()
+    }
+
+    /// Convert the HashMap `soft_bins` into a `DataFrame` format
+    pub fn hard_bins_to_df(&self) -> DataFrame {
+        let mut head_nums: Vec<u8> = Vec::new();
+        let mut site_nums: Vec<u8> = Vec::new();
+        let mut hbin_nums: Vec<u16> = Vec::new();
+        let mut hbin_cnts: Vec<u32> = Vec::new();
+        let mut hbin_pfs: Vec<String> = Vec::new();
+        let mut hbin_nams: Vec<String> = Vec::new();
+
+        for hbin in self.hard_bins.values() {
+            head_nums.push(hbin.head_num);
+            site_nums.push(hbin.site_num);
+            hbin_nums.push(hbin.hbin_num);
+            hbin_cnts.push(hbin.hbin_cnt);
+            hbin_pfs.push(hbin.hbin_pf.to_string());
+            hbin_nams.push(hbin.hbin_nam.clone());
+        }
+        let mut columns = Vec::new();
+        columns.push(Column::new("hbin_num".into(), hbin_nums));
+        columns.push(Column::new("head_num".into(), head_nums));
+        columns.push(Column::new("site_num".into(), site_nums));
+        columns.push(Column::new("hbin_cnt".into(), hbin_cnts));
+        columns.push(Column::new("hbin_pf".into(), hbin_pfs));
+        columns.push(Column::new("hbin_nam".into(), hbin_nams));
+
+        DataFrame::new(columns).unwrap()
+    }
 }
