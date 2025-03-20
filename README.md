@@ -49,7 +49,11 @@ To add the `stupidf` library to a rust project, add to the `Cargol.toml`:
 stupidf = "0.1.0"
 ```
 
-To install the Python bindings and pre-built wheel (linux only currently):
+or execute from the command line in your rust project
+
+```cargo add stupidf```
+
+To install the Python bindings and pre-built wheel (linux and win currently):
 
 ```pip install stupidf```
 
@@ -57,14 +61,7 @@ To install the Python bindings and pre-built wheel (linux only currently):
 
 The rust library can be compiled simply with
 
-```cargo build --develop```
-
-Docs can be built and viewed with
-
-```
-cargo docs
-cargo docs --open
-```
+```cargo build```
 
 The Python bindings can be made using [`maturin`](https://www.maturin.rs/). Activate the desired virtualenv, then install `maturin` and use it to build the bindings
 
