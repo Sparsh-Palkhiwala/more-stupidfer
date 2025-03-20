@@ -31,6 +31,10 @@ struct PySTDF {
     soft_bins: PyDataFrame,
     /// The hard-bin information
     hard_bins: PyDataFrame,
+    /// The pin mapping information
+    pins: PyDataFrame,
+    /// The test number -> [pin_id] mapping
+    pin_mapping: HashMap<u32, Vec<u16>>,
     /// The `DataFrame` containing the test results (corresponds to `TestData`)
     df: PyDataFrame,
     /// The `DataFrame` containing the test information metadata (corresponds to
@@ -52,6 +56,8 @@ impl PySTDF {
         let site_information = stdf.site_information.clone();
         let soft_bins = PyDataFrame(stdf.soft_bins_to_df());
         let hard_bins = PyDataFrame(stdf.hard_bins_to_df());
+        let pins = PyDataFrame(stdf.pin_mapping_to_df());
+        let pin_mapping = stdf.test_data.mpr_index_lookup.clone();
         let test_data = &stdf.test_data;
         let test_info = &test_data.test_information;
         let df = PyDataFrame(test_data.into());
@@ -63,6 +69,8 @@ impl PySTDF {
             site_information,
             soft_bins,
             hard_bins,
+            pins,
+            pin_mapping,
             df,
             test_information,
             full_test_information,

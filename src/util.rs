@@ -96,7 +96,7 @@ pub fn kxU1(contents: &[u8], num: usize, offset: &mut usize) -> Vec<u8> {
 }
 
 /// Parse an array of uint16 and advance the offset
-pub fn kxU2(contents: &[u8], num: u16, offset: &mut usize) -> Vec<u16> {
+pub fn kxU2(contents: &[u8], num: usize, offset: &mut usize) -> Vec<u16> {
     let mut v = Vec::with_capacity(num as usize);
     for _ in 0..num {
         let x = u16::from_le_bytes(contents[*offset..*offset + 2].try_into().unwrap());
@@ -106,8 +106,19 @@ pub fn kxU2(contents: &[u8], num: u16, offset: &mut usize) -> Vec<u16> {
     v
 }
 
+/// Parse an array of f32 and advance the offset
+pub fn kxR4(contents: &[u8], num: usize, offset: &mut usize) -> Vec<f32> {
+    let mut v = Vec::with_capacity(num);
+    for _ in 0..num {
+        let x = f32::from_le_bytes(contents[*offset..*offset + 4].try_into().unwrap());
+        v.push(x);
+        *offset += 4;
+    }
+    v
+}
+
 /// Parse an array of uint4 and advance the offset
-pub fn kxN1(contents: &[u8], num: u16, offset: &mut usize) -> Vec<u8> {
+pub fn kxN1(contents: &[u8], num: usize, offset: &mut usize) -> Vec<u8> {
     let nbytes = num.div_ceil(2) as usize;
     let mut v = Vec::with_capacity(num as usize);
     for _ in 0..nbytes {

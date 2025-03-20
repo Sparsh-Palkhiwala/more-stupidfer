@@ -757,11 +757,12 @@ impl From<&RawRecord> for FTR {
         let vect_off = I2(contents, &mut offset);
         let rtn_icnt = U2(contents, &mut offset);
         let pgm_icnt = U2(contents, &mut offset);
-        let rtn_indx = kxU2(contents, rtn_icnt, &mut offset);
-        let rtn_stat = kxN1(contents, rtn_icnt, &mut offset);
-        let pgm_indx = kxU2(contents, pgm_icnt, &mut offset);
-        let pgm_stat = kxN1(contents, pgm_icnt, &mut offset);
+        let rtn_indx = kxU2(contents, rtn_icnt.into(), &mut offset);
+        let rtn_stat = kxN1(contents, rtn_icnt.into(), &mut offset);
+        let pgm_indx = kxU2(contents, pgm_icnt.into(), &mut offset);
+        let pgm_stat = kxN1(contents, pgm_icnt.into(), &mut offset);
         let fail_pin = Dn(contents, &mut offset);
+
         let vect_nam = Cn(contents, &mut offset);
         let time_set = Cn(contents, &mut offset);
         let op_code = Cn(contents, &mut offset);
@@ -813,6 +814,144 @@ impl FTR {
     }
 }
 
+/// Multiple-Result Parametric Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct MPR {
+    pub test_num: u32,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub test_flg: u8,
+    pub parm_flg: u8,
+    pub rtn_icnt: u16,      // j
+    pub rslt_cnt: u16,      // k
+    pub rtn_stat: Vec<u8>,  // jxN*1
+    pub rtn_rslt: Vec<f32>, // kxR*4
+    pub test_txt: String,
+    pub alarm_id: String,
+    pub opt_flag: u8,
+    pub res_scal: i8,
+    pub llm_scal: i8,
+    pub hlm_scal: i8,
+    pub lo_limit: f32,
+    pub hi_limit: f32,
+    pub start_in: f32,
+    pub incr_in: f32,
+    pub rtn_indx: Vec<u16>, // jxU*2
+    pub units: String,
+    pub units_in: String,
+    pub c_resfmt: String,
+    pub c_llmfmt: String,
+    pub c_hlmfmt: String,
+    pub lo_spec: f32,
+    pub hi_spec: f32,
+}
+
+impl From<&RawRecord> for MPR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+
+        let test_num = U4(contents, &mut offset);
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+        let test_flg = U1(contents, &mut offset);
+        let parm_flg = U1(contents, &mut offset);
+        let rtn_icnt = U2(contents, &mut offset);
+        let rslt_cnt = U2(contents, &mut offset);
+        let rtn_stat = kxN1(contents, rtn_icnt.into(), &mut offset);
+        let rtn_rslt = kxR4(contents, rslt_cnt.into(), &mut offset);
+        let test_txt = Cn(contents, &mut offset);
+        let alarm_id = Cn(contents, &mut offset);
+        let opt_flag = U1(contents, &mut offset);
+        let res_scal = I1(contents, &mut offset);
+        let llm_scal = I1(contents, &mut offset);
+        let hlm_scal = I1(contents, &mut offset);
+        let lo_limit = R4(contents, &mut offset);
+        let hi_limit = R4(contents, &mut offset);
+        let start_in = R4(contents, &mut offset);
+        let incr_in = R4(contents, &mut offset);
+        let rtn_indx = kxU2(contents, rtn_icnt.into(), &mut offset);
+        let units = Cn(contents, &mut offset);
+        let units_in = Cn(contents, &mut offset);
+        let c_resfmt = Cn(contents, &mut offset);
+        let c_llmfmt = Cn(contents, &mut offset);
+        let c_hlmfmt = Cn(contents, &mut offset);
+        let lo_spec = R4(contents, &mut offset);
+        let hi_spec = R4(contents, &mut offset);
+
+        Self {
+            test_num,
+            head_num,
+            site_num,
+            test_flg,
+            parm_flg,
+            rtn_icnt,
+            rslt_cnt,
+            rtn_stat,
+            rtn_rslt,
+            test_txt,
+            alarm_id,
+            opt_flag,
+            res_scal,
+            llm_scal,
+            hlm_scal,
+            lo_limit,
+            hi_limit,
+            start_in,
+            incr_in,
+            rtn_indx,
+            units,
+            units_in,
+            c_resfmt,
+            c_llmfmt,
+            c_hlmfmt,
+            lo_spec,
+            hi_spec,
+        }
+    }
+}
+
+/// Pin Map Record
+#[derive(Debug, IntoPyObject)]
+#[allow(dead_code)]
+#[allow(non_snake_case)]
+pub struct PMR {
+    pub pmr_indx: u16,
+    pub chan_typ: u16,
+    pub chan_nam: String,
+    pub phy_nam: String,
+    pub log_nam: String,
+    pub head_num: u8,
+    pub site_num: u8,
+}
+
+impl From<&RawRecord> for PMR {
+    fn from(record: &RawRecord) -> Self {
+        let contents = &record.contents;
+        let mut offset: usize = 0;
+
+        let pmr_indx = U2(contents, &mut offset);
+        let chan_typ = U2(contents, &mut offset);
+        let chan_nam = Cn(contents, &mut offset);
+        let phy_nam = Cn(contents, &mut offset);
+        let log_nam = Cn(contents, &mut offset);
+        let head_num = U1(contents, &mut offset);
+        let site_num = U1(contents, &mut offset);
+
+        Self {
+            pmr_indx,
+            chan_typ,
+            chan_nam,
+            phy_nam,
+            log_nam,
+            head_num,
+            site_num,
+        }
+    }
+}
+
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct NotImplementedRecord {}
@@ -827,7 +966,7 @@ pub enum Record {
     PCR(PCR),
     HBR(HBR),
     SBR(SBR),
-    PMR(NotImplementedRecord),
+    PMR(PMR),
     PGR(NotImplementedRecord),
     PLR(NotImplementedRecord),
     RDR(NotImplementedRecord),
@@ -839,7 +978,7 @@ pub enum Record {
     PRR(PRR),
     TSR(TSR),
     PTR(PTR),
-    MPR(NotImplementedRecord),
+    MPR(MPR),
     FTR(FTR),
     BPS(NotImplementedRecord),
     EPS(NotImplementedRecord),

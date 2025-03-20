@@ -29,6 +29,7 @@ pub struct Row {
     hbin: u16,
     results_parametric: Vec<f32>,
     results_functional: Vec<bool>,
+    results_multi_pin: Vec<Vec<f32>>,
 }
 
 impl Row {
@@ -47,6 +48,7 @@ impl Row {
         pir: &PIR,
         num_tests_parametric: usize,
         num_tests_functional: usize,
+        num_tests_multi_pin: usize,
         wir: &Option<WIR>,
     ) -> Self {
         let wafer_id: String;
@@ -66,6 +68,7 @@ impl Row {
             hbin: 0,
             results_parametric: vec![f32::NAN; num_tests_parametric as usize],
             results_functional: vec![false; num_tests_functional as usize],
+            results_multi_pin: vec![Vec::new(); num_tests_multi_pin as usize],
         }
     }
 }
@@ -93,20 +96,28 @@ pub struct TestData {
     pub full_test_information: FullTestInformation,
     /// The test information metadata indexed by `test_num`
     pub test_information: FullMergedTestInformation,
-    /// Mapping the `test_num` to `Row.results_parametric` or `Row.results_functional`
+    /// Mapping the `test_num` to `Row.results_parametric` or `Row.results_functional` or
+    /// `Row.results_multi_pin`
     pub index_lookup: HashMap<u32, usize>,
     /// The list of test results contained in `Row`s
     pub data: Vec<Row>,
+    /// For multi-pin tests,text-align: ->style="caret- where the="caret-colorder matches that of
+    /// in the test results
+    pub mpr_index_lookup: HashMap<u32, Vec<u16>>,
     // The temporary rows indexed by (`test_num`, `site_num`, `head_num`)
     temp_rows: HashMap<(u8, u8), Row>,
     // The number of parametric tests
     n_para: usize,
     // The number of functional tests
     n_func: usize,
+    // The number of multi-pin tests
+    n_mult: usize,
     // The mapping of index in `Row.results_parametric` to `test_num`
     reverse_lookup_para: HashMap<usize, u32>,
     // The mapping of index in `Row.results_functional` to `test_num`
     reverse_lookup_func: HashMap<usize, u32>,
+    // The mapping of index in `Row.results_multi_pin` to `test_num`
+    reverse_lookup_mult: HashMap<usize, u32>,
     // The current active wafer
     wir: Option<WIR>,
 }
@@ -119,21 +130,32 @@ impl TestData {
         let mut index_lookup = HashMap::new();
         let mut reverse_lookup_para = HashMap::new();
         let mut reverse_lookup_func = HashMap::new();
+        let mut reverse_lookup_mult = HashMap::new();
         let mut n_para: usize = 0;
         let mut n_func: usize = 0;
+        let mut n_mult: usize = 0;
         for (tnum, mti) in test_information.test_infos.iter().sorted_by_key(|x| x.0) {
-            if let TestType::P = mti.test_type {
-                index_lookup.insert(*tnum, n_para);
-                reverse_lookup_para.insert(n_para, *tnum);
-                n_para += 1;
-            }
-            if let TestType::F = mti.test_type {
-                index_lookup.insert(*tnum, n_func);
-                reverse_lookup_func.insert(n_func, *tnum);
-                n_func += 1;
+            match mti.test_type {
+                TestType::P => {
+                    index_lookup.insert(*tnum, n_para);
+                    reverse_lookup_para.insert(n_para, *tnum);
+                    n_para += 1;
+                }
+                TestType::F => {
+                    index_lookup.insert(*tnum, n_func);
+                    reverse_lookup_func.insert(n_func, *tnum);
+                    n_func += 1;
+                }
+                TestType::M => {
+                    index_lookup.insert(*tnum, n_mult);
+                    reverse_lookup_mult.insert(n_mult, *tnum);
+                    n_mult += 1;
+                }
+                _ => {}
             }
         }
 
+        let mpr_index_lookup = HashMap::new();
         let data = Vec::new();
         let temp_rows = HashMap::new();
         Self {
@@ -141,11 +163,14 @@ impl TestData {
             test_information,
             index_lookup,
             data,
+            mpr_index_lookup,
             temp_rows,
             n_para,
             n_func,
+            n_mult,
             reverse_lookup_para,
             reverse_lookup_func,
+            reverse_lookup_mult,
             wir: None,
         }
     }
@@ -158,7 +183,13 @@ impl TestData {
     pub fn new_part(&mut self, pir: &PIR) {
         let key = (pir.head_num, pir.site_num);
         if let Vacant(row) = self.temp_rows.entry(key) {
-            row.insert(Row::new(&pir, self.n_para, self.n_func, &self.wir));
+            row.insert(Row::new(
+                &pir,
+                self.n_para,
+                self.n_func,
+                self.n_mult,
+                &self.wir,
+            ));
         } else {
             panic!("opening a specific head_num/site_num before closing the previous one!")
         }
@@ -195,10 +226,32 @@ impl TestData {
             let index = self
                 .index_lookup
                 .get(&ftr.test_num)
-                .expect("found PTR with unknown test_num!");
+                .expect("found FTR with unknown test_num!");
             results[*index] = result;
         } else {
             panic!("trying to add data to a head_num/site_num that is not open!")
+        }
+    }
+
+    /// Adds a multi-pin test result contained in the activeto the appropriate temporary(0, 0, +    ///
+    /// Must have an appropriate temporary row indexed by (`test_num`,font-variant `head_num`)
+    /// to add to, otherwise panics. Temporary rows are created by ingesting a-caps:
+    pub fn add_data_mpr(&mut self, mpr: &MPR) {
+        let key = (mpr.head_num, mpr.site_num);
+        let result = mpr.rtn_rslt.clone();
+        if let Vacant(pin_ids) = self.mpr_index_lookup.entry(mpr.test_num) {
+            let rtn_indx = mpr.rtn_indx.clone();
+            pin_ids.insert(rtn_indx);
+        }
+        if let Occupied(mut row) = self.temp_rows.entry(key) {
+            let results = &mut row.get_mut().results_multi_pin;
+            let index = self
+                .index_lookup
+                .get(&mpr.test_num)
+                .expect("found MPR with unknown test_num!");
+            results[*index] = result;
+        } else {
+            panic!("trying to add data to a head_num/site_num that is not open!");
         }
     }
 
@@ -294,10 +347,12 @@ impl Into<DataFrame> for &TestData {
         let mut head_nums: Vec<u8> = Vec::new();
         let mut sbins: Vec<u16> = Vec::new();
         let mut hbins: Vec<u16> = Vec::new();
-        let mut para_vecs: HashMap<u32, Vec<f32>> = HashMap::new();
-        let mut func_vecs: HashMap<u32, Vec<bool>> = HashMap::new();
+        let mut vecs_para: HashMap<u32, Vec<f32>> = HashMap::new(); // hashmap to later sort by key
+        let mut vecs_func: HashMap<u32, Vec<bool>> = HashMap::new();
+        let mut vecs_mult: HashMap<u32, Vec<AnyValue>> = HashMap::new();
         let ncols_para = self.n_para;
         let ncols_func = self.n_func;
+        let ncols_mult = self.n_mult;
         for row in &self.data {
             part_ids.push(row.part_id.clone());
             wafer_ids.push(row.wafer_id.clone());
@@ -308,17 +363,25 @@ impl Into<DataFrame> for &TestData {
             hbins.push(row.hbin);
             for i in 0..ncols_para {
                 let test_num = self.reverse_lookup_para.get(&i).unwrap();
-                para_vecs
+                vecs_para
                     .entry(*test_num)
                     .or_insert(Vec::new())
                     .push(row.results_parametric[i]);
             }
             for i in 0..ncols_func {
                 let test_num = self.reverse_lookup_func.get(&i).unwrap();
-                func_vecs
+                vecs_func
                     .entry(*test_num)
                     .or_insert(Vec::new())
                     .push(row.results_functional[i]);
+            }
+            for i in 0..ncols_mult {
+                let test_num = self.reverse_lookup_mult.get(&i).unwrap();
+                vecs_mult.entry(*test_num).or_insert(Vec::new()).push({
+                    let results: Series = row.results_multi_pin[i].clone().into_iter().collect();
+                    let len = results.len();
+                    AnyValue::Array(results, len)
+                });
             }
         }
         let mut columns: Vec<Column> = Vec::new();
@@ -329,10 +392,13 @@ impl Into<DataFrame> for &TestData {
         columns.push(Column::new("head_nums".into(), head_nums));
         columns.push(Column::new("sbins".into(), sbins));
         columns.push(Column::new("hbins".into(), hbins));
-        for (test_num, vec) in para_vecs.iter().sorted_by_key(|x| x.0) {
+        for (test_num, vec) in vecs_para.iter().sorted_by_key(|(key, _)| *key) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
-        for (test_num, vec) in func_vecs.iter().sorted_by_key(|x| x.0) {
+        for (test_num, vec) in vecs_func.iter().sorted_by_key(|(key, _)| *key) {
+            columns.push(Column::new(test_num.to_string().into(), vec));
+        }
+        for (test_num, vec) in vecs_mult.iter().sorted_by_key(|(key, _)| *key) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
         DataFrame::new(columns).unwrap()
@@ -507,6 +573,8 @@ pub struct STDF {
     pub soft_bins: HashMap<u16, SBR>,
     /// Hard bin information indexed by hard bin number
     pub hard_bins: HashMap<u16, HBR>,
+    /// Pin mapping
+    pub pins: HashMap<u16, PMR>,
     /// The test results and test information metadata
     pub test_data: TestData,
 }
@@ -534,6 +602,7 @@ impl STDF {
         let mut wrrs = Vec::new();
         let mut soft_bins = HashMap::new();
         let mut hard_bins = HashMap::new();
+        let mut pins = HashMap::new();
         let records = Records::new(&fname)?;
 
         let mut opt_mir: Option<MIR> = None;
@@ -557,6 +626,9 @@ impl STDF {
                     Record::HBR(hbr) => {
                         hard_bins.insert(hbr.hbin_num, hbr);
                     }
+                    Record::PMR(pmr) => {
+                        pins.insert(pmr.pmr_indx, pmr);
+                    }
                     Record::WIR(wir) => {
                         test_data.new_wafer(&wir);
                         wirs.push(wir);
@@ -573,6 +645,9 @@ impl STDF {
                     }
                     Record::FTR(ref ftr) => {
                         test_data.add_data_ftr(ftr);
+                    }
+                    Record::MPR(ref mpr) => {
+                        test_data.add_data_mpr(mpr);
                     }
                     Record::PRR(ref prr) => {
                         test_data.finish_part(prr);
@@ -594,12 +669,13 @@ impl STDF {
                 site_information,
                 soft_bins,
                 hard_bins,
+                pins,
                 test_data,
             })
         } else {
             Err(std::io::Error::new(
                 std::io::ErrorKind::UnexpectedEof,
-                format!("Failed to parse {fname}! MIR or MRR missing."),
+                format!("Failed to parse {fname}! MIR or MRR or SDR missing."),
             ))
         }
     }
@@ -656,6 +732,37 @@ impl STDF {
         columns.push(Column::new("hbin_cnt".into(), hbin_cnts));
         columns.push(Column::new("hbin_pf".into(), hbin_pfs));
         columns.push(Column::new("hbin_nam".into(), hbin_nams));
+
+        DataFrame::new(columns).unwrap()
+    }
+
+    /// Convert the HashMap `pin_mapping` into a `DataFrame` format
+    pub fn pin_mapping_to_df(&self) -> DataFrame {
+        let mut pmr_indxs: Vec<u16> = Vec::new();
+        let mut chan_typs: Vec<u16> = Vec::new();
+        let mut chan_nams: Vec<String> = Vec::new();
+        let mut phy_nams: Vec<String> = Vec::new();
+        let mut log_nams: Vec<String> = Vec::new();
+        let mut head_nums: Vec<u8> = Vec::new();
+        let mut site_nums: Vec<u8> = Vec::new();
+
+        for pmr in self.pins.values() {
+            pmr_indxs.push(pmr.pmr_indx);
+            chan_typs.push(pmr.chan_typ);
+            chan_nams.push(pmr.chan_nam.clone());
+            phy_nams.push(pmr.phy_nam.clone());
+            log_nams.push(pmr.log_nam.clone());
+            head_nums.push(pmr.head_num);
+            site_nums.push(pmr.site_num);
+        }
+        let mut columns = Vec::new();
+        columns.push(Column::new("pmr_indx".into(), pmr_indxs));
+        columns.push(Column::new("chan_typ".into(), chan_typs));
+        columns.push(Column::new("chan_nam".into(), chan_nams));
+        columns.push(Column::new("phy_nam".into(), phy_nams));
+        columns.push(Column::new("log_nam".into(), log_nams));
+        columns.push(Column::new("head_num".into(), head_nums));
+        columns.push(Column::new("site_num".into(), site_nums));
 
         DataFrame::new(columns).unwrap()
     }
