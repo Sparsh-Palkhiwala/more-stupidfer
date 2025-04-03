@@ -69,3 +69,16 @@ The Python bindings can be made using [`maturin`](https://www.maturin.rs/). Acti
 pip install maturin
 maturin develop
 ```
+
+# Development
+
+If you're seeing issues with `pyo3` recompiling on every build, even when there are no `pyo3`-related changes, then you're most likely running into [this issue](https://github.com/PyO3/pyo3/issues/1708). 
+
+Consider setting the `PYO3_PYTHON` env variable adding to your `Cargo.toml` or terminal:
+
+```
+[env]
+PYO3_PYTHON = /path/to/python
+```
+
+and also ensuring this is the Python interpreter used by your IDE. E.g. if using nvim, activate the venv before starting nvim. 

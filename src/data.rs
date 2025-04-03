@@ -20,6 +20,7 @@ use crate::{
 #[derive(Debug, IntoPyObject)]
 pub struct Row {
     part_id: String,
+    part_txt: String,
     wafer_id: String,
     x_coord: i16,
     y_coord: i16,
@@ -59,6 +60,7 @@ impl Row {
         }
         Self {
             part_id: String::new(),
+            part_txt: String::new(),
             wafer_id,
             x_coord: -5000,
             y_coord: -5000,
@@ -267,6 +269,7 @@ impl TestData {
         if let Occupied(value) = self.temp_rows.entry(key) {
             let mut row = value.remove();
             row.part_id = prr.part_id.clone();
+            row.part_txt = prr.part_txt.clone();
             row.x_coord = prr.x_coord;
             row.y_coord = prr.y_coord;
             row.sbin = prr.soft_bin;
@@ -290,6 +293,41 @@ impl TestData {
     /// pass in the WRR.
     pub fn close_wafer(&mut self) {
         self.wir = None;
+    }
+
+    /// Normalize the shape of the multipin Vec<Vec<f32>>
+    ///
+    /// Each multipin test is pre-allocated an Vec<f32>. It is not specified a priori what size
+    /// this Vec should be, and the spec technically permits a variable sized vector, though this
+    /// parser does not permit such behavior. If a multi-pin test is not run, e.g. if for instance
+    /// a continuity test fails, so subsequent power short tests are not run, then the allocated
+    /// vector will be length 0, while populated vectors will be length >= 1.
+    ///
+    /// Subsequent attempts to construct a DataFrame from this data fails because the DataFrame
+    /// uses a fixed-sized array as the column type, and therefore must have a perfectly
+    /// rectangular data shape.
+    ///
+    /// This function iterates through the Rows and pads any multipin test results to match the
+    /// maximum number of pins, ensuring a perfectly rectangular data shape.
+    fn normalize_multipin_results(&mut self) {
+        // find the largest n_pins for each test_num
+        let mut lengths = vec![0; self.n_mult];
+        for row in &self.data {
+            for (i, results) in row.results_multi_pin.iter().enumerate() {
+                let len = results.len();
+                if lengths.get(i).unwrap() < &len {
+                    lengths[i] = len;
+                }
+            }
+        }
+        let lengths = lengths;
+
+        // pad every multipin test to largest n_pins
+        for row in &mut self.data {
+            for (i, results) in row.results_multi_pin.iter_mut().enumerate() {
+                results.resize(lengths[i], f32::NAN);
+            }
+        }
     }
 
     /// Generate the `TestData` from an STDF file specified by `fname`
@@ -325,6 +363,9 @@ impl TestData {
                 if let Record::FTR(ref ftr) = resolved {
                     test_data.add_data_ftr(ftr);
                 }
+                if let Record::MPR(ref mpr) = resolved {
+                    test_data.add_data_mpr(mpr);
+                }
                 if let Record::PRR(ref prr) = resolved {
                     test_data.finish_part(prr);
                 }
@@ -333,6 +374,7 @@ impl TestData {
                 }
             }
         }
+        test_data.normalize_multipin_results();
         Ok(test_data)
     }
 }
@@ -341,6 +383,7 @@ impl TestData {
 impl Into<DataFrame> for &TestData {
     fn into(self) -> DataFrame {
         let mut part_ids: Vec<String> = Vec::new();
+        let mut part_txts: Vec<String> = Vec::new();
         let mut wafer_ids: Vec<String> = Vec::new();
         let mut x_coords: Vec<i16> = Vec::new();
         let mut y_coords: Vec<i16> = Vec::new();
@@ -355,6 +398,7 @@ impl Into<DataFrame> for &TestData {
         let ncols_mult = self.n_mult;
         for row in &self.data {
             part_ids.push(row.part_id.clone());
+            part_txts.push(row.part_txt.clone());
             wafer_ids.push(row.wafer_id.clone());
             x_coords.push(row.x_coord);
             y_coords.push(row.y_coord);
@@ -386,6 +430,7 @@ impl Into<DataFrame> for &TestData {
         }
         let mut columns: Vec<Column> = Vec::new();
         columns.push(Column::new("part_id".into(), part_ids));
+        columns.push(Column::new("part_txt".into(), part_txts));
         columns.push(Column::new("wafer_id".into(), wafer_ids));
         columns.push(Column::new("x_coords".into(), x_coords));
         columns.push(Column::new("y_coords".into(), y_coords));
@@ -656,6 +701,7 @@ impl STDF {
                 }
             }
         }
+        test_data.normalize_multipin_results();
         if let (Some(mir), Some(mrr), Some(site_information)) = (opt_mir, opt_mrr, opt_sdr) {
             let master_information = MasterInformation::new(mir, mrr);
             let wafer_information = wirs
