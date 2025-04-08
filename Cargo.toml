@@ -1,6 +1,6 @@
 [package]
 name = "stupidf"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2024"
 description = "Parsing of STDF file format to DataFrame with Python bindings"
 license = "MIT"

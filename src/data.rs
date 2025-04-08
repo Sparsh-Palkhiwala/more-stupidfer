@@ -389,6 +389,7 @@ impl Into<DataFrame> for &TestData {
         let mut x_coords: Vec<i16> = Vec::new();
         let mut y_coords: Vec<i16> = Vec::new();
         let mut head_nums: Vec<u8> = Vec::new();
+        let mut site_nums: Vec<u8> = Vec::new();
         let mut sbins: Vec<u16> = Vec::new();
         let mut hbins: Vec<u16> = Vec::new();
         let mut vecs_para: HashMap<u32, Vec<f32>> = HashMap::new(); // hashmap to later sort by key
@@ -404,6 +405,7 @@ impl Into<DataFrame> for &TestData {
             x_coords.push(row.x_coord);
             y_coords.push(row.y_coord);
             head_nums.push(row.head_num);
+            site_nums.push(row.site_num);
             sbins.push(row.sbin);
             hbins.push(row.hbin);
             for i in 0..ncols_para {
@@ -433,11 +435,12 @@ impl Into<DataFrame> for &TestData {
         columns.push(Column::new("part_id".into(), part_ids));
         columns.push(Column::new("part_txt".into(), part_txts));
         columns.push(Column::new("wafer_id".into(), wafer_ids));
-        columns.push(Column::new("x_coords".into(), x_coords));
-        columns.push(Column::new("y_coords".into(), y_coords));
-        columns.push(Column::new("head_nums".into(), head_nums));
-        columns.push(Column::new("sbins".into(), sbins));
-        columns.push(Column::new("hbins".into(), hbins));
+        columns.push(Column::new("x_coord".into(), x_coords));
+        columns.push(Column::new("y_coord".into(), y_coords));
+        columns.push(Column::new("head_num".into(), head_nums));
+        columns.push(Column::new("site_num".into(), site_nums));
+        columns.push(Column::new("sbin".into(), sbins));
+        columns.push(Column::new("hbin".into(), hbins));
         for (test_num, vec) in vecs_para.iter().sorted_by_key(|(key, _)| *key) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
