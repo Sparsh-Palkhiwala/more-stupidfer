@@ -6,6 +6,7 @@ use std::collections::{
 use itertools::Itertools;
 use polars::prelude::*;
 use pyo3::IntoPyObject;
+use serde::Serialize;
 
 use crate::records::{Records, records::*};
 use crate::{
@@ -17,20 +18,20 @@ use crate::{
 ///
 /// Defaults `x_coord` = `y_coord` = -5000 and `sbin` = `hbin` = 0. Parametric tests have a
 /// default value of `NAN` and functional tests default to `false`.
-#[derive(Debug, IntoPyObject)]
+#[derive(Debug, IntoPyObject, Serialize)]
 pub struct Row {
-    part_id: String,
-    part_txt: String,
-    wafer_id: String,
-    x_coord: i16,
-    y_coord: i16,
-    head_num: u8,
-    site_num: u8,
-    sbin: u16,
-    hbin: u16,
-    results_parametric: Vec<f32>,
-    results_functional: Vec<bool>,
-    results_multi_pin: Vec<Vec<f32>>,
+    pub part_id: String,
+    pub part_txt: String,
+    pub wafer_id: String,
+    pub x_coord: i16,
+    pub y_coord: i16,
+    pub head_num: u8,
+    pub site_num: u8,
+    pub sbin: u16,
+    pub hbin: u16,
+    pub results_parametric: Vec<f32>,
+    pub results_functional: Vec<bool>,
+    pub results_multi_pin: Vec<Vec<f32>>,
 }
 
 impl Row {
@@ -450,7 +451,7 @@ impl Into<DataFrame> for &TestData {
     }
 }
 
-#[derive(Debug, IntoPyObject, Clone)]
+#[derive(Debug, IntoPyObject, Clone, Serialize)]
 pub struct MasterInformation {
     // MIR records follow
     pub setup_t: u32,
@@ -549,7 +550,7 @@ impl MasterInformation {
     }
 }
 
-#[derive(Debug, IntoPyObject, Clone)]
+#[derive(Debug, IntoPyObject, Clone, Serialize)]
 pub struct WaferInformation {
     // From WIR
     pub head_num: u8,

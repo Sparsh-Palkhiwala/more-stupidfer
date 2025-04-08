@@ -9,6 +9,7 @@ use pyo3::Bound;
 use pyo3::IntoPyObject;
 use pyo3::Python;
 use pyo3::types::PyString;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt;
@@ -192,7 +193,7 @@ impl TestInformation {
 }
 
 /// `TestType` describes the category of test
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq, Serialize)]
 pub enum TestType {
     /// A parametric test, i.e. one that measures a value
     P,
