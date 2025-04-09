@@ -18,7 +18,7 @@ use crate::{
 ///
 /// Defaults `x_coord` = `y_coord` = -5000 and `sbin` = `hbin` = 0. Parametric tests have a
 /// default value of `NAN` and functional tests default to `false`.
-#[derive(Debug, IntoPyObject, Serialize, Clone)]
+#[derive(Debug, IntoPyObject, Serialize)]
 pub struct Row {
     pub part_id: String,
     pub part_txt: String,
@@ -30,10 +30,8 @@ pub struct Row {
     pub sbin: u16,
     pub hbin: u16,
     pub results_parametric: Vec<f32>,
-    pub results_parametric_bool: Vec<bool>,
     pub results_functional: Vec<bool>,
     pub results_multi_pin: Vec<Vec<f32>>,
-    pub results_multi_pin_bool: Vec<Vec<bool>>,
 }
 
 impl Row {
@@ -72,10 +70,8 @@ impl Row {
             sbin: 0,
             hbin: 0,
             results_parametric: vec![f32::NAN; num_tests_parametric as usize],
-            results_parametric_bool: vec![false; num_tests_parametric as usize],
             results_functional: vec![false; num_tests_functional as usize],
             results_multi_pin: vec![Vec::new(); num_tests_multi_pin as usize],
-            results_multi_pin_bool: vec![Vec::new(); num_tests_multi_pin as usize],
         }
     }
 }
@@ -215,8 +211,6 @@ impl TestData {
                 .expect("found PTR with unknown test_num!");
             let results = &mut row.get_mut().results_parametric;
             results[*index] = ptr.result;
-            let results_bool = &mut row.get_mut().results_parametric_bool;
-            results_bool[*index] = ptr.pass();
         } else {
             panic!("trying to add data to a head_num/site_num that is not open!")
         }
