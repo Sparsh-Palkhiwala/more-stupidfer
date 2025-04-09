@@ -704,6 +704,12 @@ impl From<&RawRecord> for PTR {
     }
 }
 
+impl PTR {
+    pub fn pass(&self) -> bool {
+        (self.test_flg >> 6) & 0b11 == 0
+    }
+}
+
 /// Functional Test Record
 #[derive(Debug, IntoPyObject)]
 #[allow(dead_code)]

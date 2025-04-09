@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    data::{MasterInformation, STDF, WaferInformation},
+    data::{MasterInformation, Row, STDF, TestData, WaferInformation},
     records::records::*,
     test_information::TestInformation,
 };
@@ -103,12 +103,61 @@ fn parse_stdf(fname: &str) -> PyResult<PySTDF> {
     Ok(pystdf)
 }
 
-/// get_mir(fname: str)
+/// get_rows(fname: str)
 /// --
 ///
-/// Get the MIR from the file specified by `fname`
+/// Parse an STDF file specified by `fname` and return a list of rows
 ///
 /// `fname` must be a `str` and may not be a `Path`-like object.
+///
+/// Returns a list of dicts, where each dict represent a single row (i.e. part).
+/// Useful if you need only the row-formatted data. The list is fully realized,
+/// i.e. a proper list, not a generator.
+///
+/// # Example
+/// ```
+///    import stupidf as sf
+///    rows = sf.get_rows("my_stdf.stdf")
+///    rows[0]
+/// ````
+#[pyfunction]
+fn get_rows(fname: &str) -> PyResult<Vec<Row>> {
+    let test_data = TestData::from_fname(fname, false)?;
+    Ok(test_data.data)
+}
+
+/// get_raw_stdf(fname: str)
+/// --
+///
+/// Parse an STDF file specified by `fname` into a dict structure
+///
+/// `fname` must be a `str` and may not be a `Path`-like object.
+///
+/// Returns a nested `dict` representing the raw rust STDF object. Useful if you
+/// do not need the DataFrame representation and prefer a row-formatted representation.
+/// The entire `dict` is fully realized, i.e. there are no generators.
+///    `master_information`: `dict` describing the Master Infomation Record and Master
+///        Results Record (file metadata)
+///    `wafer_information`: `dict` describing the Wafer Information Records and Wafer
+///        Results Records (wafer metadata)
+///    `site_information`: `dict` describing site information
+///    `soft_bins`: `dict` of {sbin: SBR}
+///    `hard_bins`: `dict` of {hbin: HBR}
+///    `pins`: `dict` of {pin_index: PMR}
+///    `test_data`: a `dict` describing all of the test results
+///
+/// # Example
+/// ```
+///    import stupidf as sf
+///    raw_stdf = sf.get_raw_stdf("my_stdf.stdf")
+///    raw_stdf['master_information']
+/// ````
+#[pyfunction]
+fn get_raw_stdf(fname: &str) -> PyResult<STDF> {
+    let stdf = STDF::from_fname(fname, false)?;
+    Ok(stdf)
+}
+
 #[pyfunction]
 fn get_mir(fname: &str) -> PyResult<MIR> {
     let mir = MIR::from_fname(&fname)?;
@@ -119,5 +168,7 @@ fn get_mir(fname: &str) -> PyResult<MIR> {
 fn stupidf(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
     m.add_function(wrap_pyfunction!(parse_stdf, m)?)?;
+    m.add_function(wrap_pyfunction!(get_rows, m)?)?;
+    m.add_function(wrap_pyfunction!(get_raw_stdf, m)?)?;
     Ok(())
 }
