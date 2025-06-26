@@ -39,6 +39,9 @@ pub struct TestInformation {
     pub low_limit: f32,
     pub high_limit: f32,
     pub units: String,
+    pub opt_flag: u8,
+    pub test_flg: u8,
+    pub parm_flg: u8,
     pub complete: Complete,
 }
 
@@ -99,6 +102,9 @@ impl TestInformation {
         let high_limit = ptr.hi_limit;
         let units = ptr.units.clone();
         let complete = Complete::PTR;
+        let opt_flag = ptr.opt_flag;
+        let test_flg = ptr.test_flg;
+        let parm_flg = ptr.parm_flg;
 
         Self {
             test_num,
@@ -119,6 +125,9 @@ impl TestInformation {
             low_limit,
             high_limit,
             units,
+            opt_flag,
+            test_flg,
+            parm_flg,
             complete,
         }
     }
@@ -175,6 +184,9 @@ impl TestInformation {
         let high_limit = f32::NAN;
         let units = String::new();
         let complete = Complete::TSR;
+        let opt_flag = 0;
+        let test_flg = 0;
+        let parm_flg = 0;
 
         Self {
             test_num,
@@ -195,6 +207,9 @@ impl TestInformation {
             low_limit,
             high_limit,
             units,
+            opt_flag,
+            test_flg,
+            parm_flg,
             complete,
         }
     }
@@ -217,6 +232,9 @@ impl TestInformation {
             self.low_limit = ptr.lo_limit;
             self.high_limit = ptr.hi_limit;
             self.units = ptr.units.clone();
+            self.opt_flag = ptr.opt_flag;
+            self.test_flg = ptr.test_flg;
+            self.parm_flg = ptr.parm_flg;
             self.complete = Complete::Complete;
         }
     }
@@ -450,6 +468,9 @@ pub struct MergedTestInformation {
     pub low_limit: f32,
     pub high_limit: f32,
     pub units: String,
+    pub opt_flag: u8,
+    pub test_flg: u8,
+    pub parm_flg: u8,
 }
 impl MergedTestInformation {
     /// Initialize a new `MergedTestInformation` from a `TestInformation` record
@@ -470,6 +491,9 @@ impl MergedTestInformation {
         let low_limit = test_information.low_limit;
         let high_limit = test_information.high_limit;
         let units = test_information.units.clone();
+        let opt_flag = test_information.opt_flag;
+        let test_flg = test_information.test_flg;
+        let parm_flg = test_information.parm_flg;
         Self {
             test_num,
             test_type,
@@ -487,6 +511,9 @@ impl MergedTestInformation {
             low_limit,
             high_limit,
             units,
+            opt_flag,
+            test_flg,
+            parm_flg,
         }
     }
 
@@ -557,6 +584,9 @@ impl Into<DataFrame> for &FullMergedTestInformation {
         let mut low_limits: Vec<f32> = Vec::new();
         let mut high_limits: Vec<f32> = Vec::new();
         let mut unitss: Vec<String> = Vec::new();
+        let mut opt_flags: Vec<u32> = Vec::new();
+        let mut test_flgs: Vec<u32> = Vec::new();
+        let mut parm_flgs: Vec<u32> = Vec::new();
 
         for (tnum, mti) in &self.test_infos {
             test_nums.push(*tnum);
@@ -575,6 +605,9 @@ impl Into<DataFrame> for &FullMergedTestInformation {
             low_limits.push(mti.low_limit);
             high_limits.push(mti.high_limit);
             unitss.push(mti.units.clone());
+            opt_flags.push(mti.opt_flag as u32);
+            test_flgs.push(mti.test_flg as u32);
+            parm_flgs.push(mti.parm_flg as u32);
         }
 
         let mut columns: Vec<Column> = Vec::new();
@@ -594,6 +627,9 @@ impl Into<DataFrame> for &FullMergedTestInformation {
         columns.push(Column::new("low_limit".into(), low_limits));
         columns.push(Column::new("high_limit".into(), high_limits));
         columns.push(Column::new("units".into(), unitss));
+        columns.push(Column::new("opt_flag".into(), opt_flags));
+        columns.push(Column::new("test_flg".into(), test_flgs));
+        columns.push(Column::new("parm_flg".into(), parm_flgs));
 
         DataFrame::new(columns).unwrap()
     }
