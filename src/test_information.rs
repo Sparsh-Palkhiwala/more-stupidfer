@@ -40,6 +40,10 @@ pub struct TestInformation {
     pub high_limit: f32,
     pub units: String,
     pub complete: Complete,
+
+    pub res_scal: Option<i8>,
+    pub llm_scal: Option<i8>,
+    pub hlm_scal: Option<i8>,
 }
 
 /// Enum describing if a `TestInformation` has been completed
@@ -99,6 +103,9 @@ impl TestInformation {
         let high_limit = ptr.hi_limit;
         let units = ptr.units.clone();
         let complete = Complete::PTR;
+        let res_scal = Some(ptr.res_scal);
+        let llm_scal = Some(ptr.llm_scal);
+        let hlm_scal = Some(ptr.hlm_scal);
 
         Self {
             test_num,
@@ -120,6 +127,9 @@ impl TestInformation {
             high_limit,
             units,
             complete,
+            res_scal,
+            llm_scal,
+            hlm_scal,
         }
     }
 
@@ -175,7 +185,9 @@ impl TestInformation {
         let high_limit = f32::NAN;
         let units = String::new();
         let complete = Complete::TSR;
-
+        let res_scal = None;
+        let llm_scal = None;
+        let hlm_scal = None;
         Self {
             test_num,
             head_num,
@@ -196,6 +208,9 @@ impl TestInformation {
             high_limit,
             units,
             complete,
+            res_scal,
+            llm_scal,
+            hlm_scal,
         }
     }
 

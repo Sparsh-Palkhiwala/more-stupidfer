@@ -32,6 +32,12 @@ pub struct Row {
     pub results_parametric: Vec<f32>,
     pub results_functional: Vec<bool>,
     pub results_multi_pin: Vec<Vec<f32>>,
+
+    pub results_parametric_scaled: Vec<f32>,     // Scaled parametric results
+    pub scaling_exponents: Vec<Option<i8>>,      // RES_SCAL values
+    pub low_limit_scaling: Vec<Option<i8>>,      // LLM_SCAL values  
+    pub high_limit_scaling: Vec<Option<i8>>,     // HLM_SCAL values
+    pub units: Vec<String>,   
 }
 
 impl Row {
@@ -72,6 +78,12 @@ impl Row {
             results_parametric: vec![f32::NAN; num_tests_parametric as usize],
             results_functional: vec![false; num_tests_functional as usize],
             results_multi_pin: vec![Vec::new(); num_tests_multi_pin as usize],
+
+            results_parametric_scaled: vec![f32::NAN; num_tests_parametric],
+            scaling_exponents: vec![None; num_tests_parametric],
+            low_limit_scaling: vec![None; num_tests_parametric],
+            high_limit_scaling: vec![None; num_tests_parametric],
+            units: vec![String::new(); num_tests_parametric],
         }
     }
 }
@@ -209,8 +221,25 @@ impl TestData {
                 .index_lookup
                 .get(&ptr.test_num)
                 .expect("found PTR with unknown test_num!");
-            let results = &mut row.get_mut().results_parametric;
-            results[*index] = ptr.result;
+                let row_mut = row.get_mut();
+            
+                // Store the raw result
+                row_mut.results_parametric[*index] = ptr.result;
+                
+                // NEW: Store scaling information and calculate scaled result
+                row_mut.scaling_exponents[*index] = Some(ptr.res_scal);
+                row_mut.low_limit_scaling[*index] = Some(ptr.llm_scal);
+                row_mut.high_limit_scaling[*index] = Some(ptr.hlm_scal);
+                row_mut.units[*index] = ptr.units.clone();
+                
+                // Calculate scaled result: result * 10^res_scal
+                let scaled_result = if ptr.res_scal != 0 {
+                    ptr.result * 10f32.powi(ptr.res_scal as i32)
+                } else {
+                    ptr.result
+                };
+                row_mut.results_parametric_scaled[*index] = scaled_result;
+            }
         } else {
             panic!("trying to add data to a head_num/site_num that is not open!")
         }
@@ -394,6 +423,13 @@ impl Into<DataFrame> for &TestData {
         let mut vecs_para: HashMap<u32, Vec<f32>> = HashMap::new(); // hashmap to later sort by key
         let mut vecs_func: HashMap<u32, Vec<bool>> = HashMap::new();
         let mut vecs_mult: HashMap<u32, Vec<AnyValue>> = HashMap::new();
+
+        let mut vecs_para_scaled: HashMap<u32, Vec<f32>> = HashMap::new();
+        let mut vecs_scaling_exp: HashMap<u32, Vec<Option<i8>>> = HashMap::new();
+        let mut vecs_llm_scal: HashMap<u32, Vec<Option<i8>>> = HashMap::new();
+        let mut vecs_hlm_scal: HashMap<u32, Vec<Option<i8>>> = HashMap::new();
+        let mut vecs_units: HashMap<u32, Vec<String>> = HashMap::new();
+
         let ncols_para = self.n_para;
         let ncols_func = self.n_func;
         let ncols_mult = self.n_mult;
@@ -409,10 +445,42 @@ impl Into<DataFrame> for &TestData {
             hbins.push(row.hbin);
             for i in 0..ncols_para {
                 let test_num = self.reverse_lookup_para.get(&i).unwrap();
+                
+                // Raw parametric results
                 vecs_para
                     .entry(*test_num)
                     .or_insert(Vec::new())
                     .push(row.results_parametric[i]);
+                
+                // NEW: Scaled parametric results
+                vecs_para_scaled
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.results_parametric_scaled[i]);
+                
+                // NEW: Scaling exponents
+                vecs_scaling_exp
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.scaling_exponents[i]);
+                
+                // NEW: Low limit scaling
+                vecs_llm_scal
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.low_limit_scaling[i]);
+                
+                // NEW: High limit scaling
+                vecs_hlm_scal
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.high_limit_scaling[i]);
+                
+                // NEW: Units
+                vecs_units
+                    .entry(*test_num)
+                    .or_insert(Vec::new())
+                    .push(row.units[i].clone());
             }
             for i in 0..ncols_func {
                 let test_num = self.reverse_lookup_func.get(&i).unwrap();
@@ -440,12 +508,42 @@ impl Into<DataFrame> for &TestData {
         columns.push(Column::new("site_num".into(), site_nums));
         columns.push(Column::new("sbin".into(), sbins));
         columns.push(Column::new("hbin".into(), hbins));
+        // Add parametric test columns (both raw and scaled)
         for (test_num, vec) in vecs_para.iter().sorted_by_key(|(key, _)| *key) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
+        
+        // NEW: Add scaled parametric test columns
+        for (test_num, vec) in vecs_para_scaled.iter().sorted_by_key(|(key, _)| *key) {
+            columns.push(Column::new(format!("{}_scaled", test_num).into(), vec));
+        }
+        
+        // NEW: Add scaling exponent columns
+        for (test_num, vec) in vecs_scaling_exp.iter().sorted_by_key(|(key, _)| *key) {
+            columns.push(Column::new(format!("{}_res_scal", test_num).into(), vec));
+        }
+        
+        // NEW: Add low limit scaling columns
+        for (test_num, vec) in vecs_llm_scal.iter().sorted_by_key(|(key, _)| *key) {
+            columns.push(Column::new(format!("{}_llm_scal", test_num).into(), vec));
+        }
+        
+        // NEW: Add high limit scaling columns
+        for (test_num, vec) in vecs_hlm_scal.iter().sorted_by_key(|(key, _)| *key) {
+            columns.push(Column::new(format!("{}_hlm_scal", test_num).into(), vec));
+        }
+        
+        // NEW: Add units columns
+        for (test_num, vec) in vecs_units.iter().sorted_by_key(|(key, _)| *key) {
+            columns.push(Column::new(format!("{}_units", test_num).into(), vec));
+        }
+        
+        // Add functional test columns
         for (test_num, vec) in vecs_func.iter().sorted_by_key(|(key, _)| *key) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
+        
+        // Add multi-pin test columns
         for (test_num, vec) in vecs_mult.iter().sorted_by_key(|(key, _)| *key) {
             columns.push(Column::new(test_num.to_string().into(), vec));
         }
