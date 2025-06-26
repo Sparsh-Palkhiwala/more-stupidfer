@@ -31,6 +31,11 @@ pub struct TestInformation {
     pub test_label: String,
     pub test_time: f32,
     pub test_text: String,
+    pub llm_scal: i8,
+    pub hlm_scal: i8,
+    pub res_scal: i8,
+    pub lo_spec: f32,
+    pub hi_spec: f32,
     pub low_limit: f32,
     pub high_limit: f32,
     pub units: String,
@@ -84,6 +89,11 @@ impl TestInformation {
         let sequence_name = String::new();
         let test_label = String::new();
         let test_time = f32::NAN;
+        let llm_scal = ptr.llm_scal;
+        let hlm_scal = ptr.hlm_scal;
+        let res_scal = ptr.res_scal;
+        let lo_spec = ptr.lo_spec;
+        let hi_spec = ptr.hi_spec;
         let test_text = ptr.test_txt.clone();
         let low_limit = ptr.lo_limit;
         let high_limit = ptr.hi_limit;
@@ -101,6 +111,11 @@ impl TestInformation {
             test_label,
             test_time,
             test_text,
+            llm_scal,
+            hlm_scal,
+            res_scal,
+            lo_spec,
+            hi_spec,
             low_limit,
             high_limit,
             units,
@@ -151,6 +166,11 @@ impl TestInformation {
         let test_label = tsr.test_lbl.clone();
         let test_time = tsr.test_tim;
         let test_text = String::new();
+        let llm_scal = 0i8;  // Default value for i8 since TSR doesn't have this field
+        let hlm_scal = 0i8;  // Default value for i8 since TSR doesn't have this field
+        let res_scal = 0i8;  // Default value for i8 since TSR doesn't have this field
+        let lo_spec = f32::NAN;
+        let hi_spec = f32::NAN;
         let low_limit = f32::NAN;
         let high_limit = f32::NAN;
         let units = String::new();
@@ -167,6 +187,11 @@ impl TestInformation {
             test_label,
             test_time,
             test_text,
+            llm_scal,
+            hlm_scal,
+            res_scal,
+            lo_spec,
+            hi_spec,
             low_limit,
             high_limit,
             units,
@@ -183,6 +208,11 @@ impl TestInformation {
             panic!("head_num/site_num/test_num from PTR does not match!");
         }
         if let Complete::TSR = self.complete {
+            self.llm_scal = ptr.llm_scal;
+            self.hlm_scal = ptr.hlm_scal;
+            self.res_scal = ptr.res_scal;
+            self.lo_spec = ptr.lo_spec;
+            self.hi_spec = ptr.hi_spec;
             self.test_text = ptr.test_txt.clone();
             self.low_limit = ptr.lo_limit;
             self.high_limit = ptr.hi_limit;
@@ -411,6 +441,11 @@ pub struct MergedTestInformation {
     pub sequence_name: String,
     pub test_label: String,
     pub test_time: f32,
+    pub llm_scal: i8,
+    pub hlm_scal: i8,
+    pub res_scal: i8,
+    pub lo_spec: f32,
+    pub hi_spec: f32,
     pub test_text: String,
     pub low_limit: f32,
     pub high_limit: f32,
@@ -426,6 +461,11 @@ impl MergedTestInformation {
         let sequence_name = test_information.sequence_name.clone();
         let test_label = test_information.test_label.clone();
         let test_time = test_information.test_time;
+        let llm_scal = test_information.llm_scal;
+        let hlm_scal = test_information.hlm_scal;
+        let res_scal = test_information.res_scal;
+        let lo_spec = test_information.lo_spec;
+        let hi_spec = test_information.hi_spec;
         let test_text = test_information.test_text.clone();
         let low_limit = test_information.low_limit;
         let high_limit = test_information.high_limit;
@@ -439,6 +479,11 @@ impl MergedTestInformation {
             test_label,
             test_time,
             test_text,
+            llm_scal,
+            hlm_scal,
+            res_scal,
+            lo_spec,
+            hi_spec,
             low_limit,
             high_limit,
             units,
@@ -504,6 +549,11 @@ impl Into<DataFrame> for &FullMergedTestInformation {
         let mut test_labels: Vec<String> = Vec::new();
         let mut test_times: Vec<f32> = Vec::new();
         let mut test_texts: Vec<String> = Vec::new();
+        let mut llm_scals: Vec<i32> = Vec::new();
+        let mut hlm_scals: Vec<i32> = Vec::new();
+        let mut res_scals: Vec<i32> = Vec::new();
+        let mut lo_specs: Vec<f32> = Vec::new();
+        let mut hi_specs: Vec<f32> = Vec::new();
         let mut low_limits: Vec<f32> = Vec::new();
         let mut high_limits: Vec<f32> = Vec::new();
         let mut unitss: Vec<String> = Vec::new();
@@ -517,6 +567,11 @@ impl Into<DataFrame> for &FullMergedTestInformation {
             test_labels.push(mti.test_label.clone());
             test_times.push(mti.test_time);
             test_texts.push(mti.test_text.clone());
+            llm_scals.push(mti.llm_scal as i32);
+            hlm_scals.push(mti.hlm_scal as i32);
+            res_scals.push(mti.res_scal as i32);
+            lo_specs.push(mti.lo_spec);
+            hi_specs.push(mti.hi_spec);
             low_limits.push(mti.low_limit);
             high_limits.push(mti.high_limit);
             unitss.push(mti.units.clone());
@@ -531,6 +586,11 @@ impl Into<DataFrame> for &FullMergedTestInformation {
         columns.push(Column::new("test_label".into(), test_labels));
         columns.push(Column::new("test_time".into(), test_times));
         columns.push(Column::new("test_text".into(), test_texts));
+        columns.push(Column::new("llm_scal".into(), llm_scals));
+        columns.push(Column::new("hlm_scal".into(), hlm_scals));
+        columns.push(Column::new("res_scal".into(), res_scals));
+        columns.push(Column::new("lo_spec".into(), lo_specs));
+        columns.push(Column::new("hi_spec".into(), hi_specs));
         columns.push(Column::new("low_limit".into(), low_limits));
         columns.push(Column::new("high_limit".into(), high_limits));
         columns.push(Column::new("units".into(), unitss));
