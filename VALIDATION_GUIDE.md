@@ -6,6 +6,11 @@ This guide explains how to use the STDF validation functionality in both Rust CL
 
 The STDF validation system provides comprehensive health checking for STDF files to ensure they comply with the STDF V4 specification and identify potential data integrity issues.
 
+Two complementary validation approaches are available:
+
+1. **Rust Validator** (`stupidf.validate_stdf()`) - Fast validation integrated with the parsing library
+2. **Python Validator** (`stdf_validator.py`) - Standalone deep analysis tool
+
 ## Features
 
 ### Validation Checks
@@ -85,7 +90,7 @@ Issues Found:
 
 ## Python API
 
-### Installation
+### Rust-based Python Bindings
 
 First, build the Python bindings:
 
@@ -411,5 +416,72 @@ files = ['file1.stdf', 'file2.stdf', 'file3.stdf']
 summary = analyze_stdf_files(files)
 print(summary.describe())
 ```
+
+## Standalone Python Validator
+
+For cases where you need deep analysis without the Rust dependency, use the standalone Python validator:
+
+### Basic Usage
+
+```bash
+# Command line usage
+python stdf_validator.py test.stdf
+```
+
+### Python API
+
+```python
+from stdf_validator import validate_stdf_file, print_validation_result
+
+# Simple validation
+result = validate_stdf_file("test.stdf")
+if result.is_valid:
+    print("✓ File is valid!")
+else:
+    print(f"✗ Found {len(result.errors)} errors")
+
+# Detailed validation with custom reporting
+from stdf_validator import STDFValidator
+
+validator = STDFValidator()
+result = validator.validate_file("test.stdf")
+
+# Print comprehensive report
+print_validation_result(result, "test.stdf")
+
+# Access specific validation results
+print(f"Structural errors: {len(result.errors)}")
+print(f"Warnings: {len(result.warnings)}")
+
+# Examine record counts
+for record_type, count in result.record_count.items():
+    print(f"{record_type}: {count}")
+```
+
+### Features
+
+- **Pure Python**: No external dependencies beyond standard library
+- **Binary Structure Validation**: Direct STDF format parsing
+- **Record Type Validation**: Checks for known/unknown record types
+- **Required Records**: Validates presence of FAR, MIR, MRR, PCR
+- **File Structure**: Ensures proper STDF file organization
+
+### When to Use Each Validator
+
+**Use Rust Validator (`stupidf.validate_stdf()`) when:**
+- Integrating validation into parsing workflows
+- Need fast validation performance
+- Want cross-record consistency checks
+- Using with existing Rust/Python processing
+
+**Use Python Validator (`stdf_validator.py`) when:**
+- Need standalone validation tool
+- Want to avoid Rust compilation
+- Need basic structural validation only
+- Developing custom validation logic
+
+Both validators can be used together for comprehensive analysis.
+
+---
 
 This comprehensive guide should help you effectively use the STDF validation functionality in your projects!
