@@ -1,12 +1,19 @@
 # stupidf
 
-
-`stupidf` is a library for limited parsing of STDF files. The `STDF` structure can be used
+`stupidf` is a library for parsing and validating STDF files. The `STDF` structure can be used
 directly in rust, or alternatively sent out to Python using the `parse_stdf` function.
 
 STDF is the [Standard Test Data Format](https://en.wikipedia.org/wiki/Standard_Test_Data_Format) and is commonly used for high-volume test of semiconductors in Automated Test Equipment (ATE) systems. 
 
 The purpose of the library is to quickly and efficiently parse STDF files (which are a fairly unfriendly binary linked list-based format) into more friendly [polars](https://pola.rs/) [DataFrame](https://docs.pola.rs/user-guide/concepts/data-types-and-structures/#dataframe) format. 
+
+## Features
+
+- **Fast STDF parsing** into Polars DataFrames
+- **STDF file validation** with comprehensive health checks
+- **Python bindings** for easy integration
+- **CLI tools** for file processing and validation
+- **Record-level analysis** with detailed statistics
 
 Not all record types are implemented because they're not relevant for my purposes. Implementing new records is straight-forward, following the others. 
 
@@ -29,11 +36,43 @@ if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
 
 Also contains Python bindings to this functionality, e.g.
 
-```
-   import stupidf as sf
-   stdf = sf.parse_stdf("my_stdf.stdf")
-   stdf['df']
+```python
+import stupidf as sf
+
+# Parse STDF file
+stdf = sf.parse_stdf("my_stdf.stdf")
+print(stdf['df'])
+
+# Validate STDF file structure and integrity
+report = sf.validate_stdf("my_stdf.stdf")
+if report.is_valid:
+    print("✓ STDF file is valid!")
+else:
+    print(f"✗ Found {report.error_count_py} errors")
 ````
+
+## CLI Usage
+
+The CLI provides both parsing and validation capabilities:
+
+```bash
+# Parse and display STDF file contents
+cargo run -- test.stdf
+
+# Validate STDF file structure and integrity  
+cargo run -- --validate test.stdf
+
+# Strict validation mode for production use
+cargo run -- --validate --strict test.stdf
+
+# Show detailed record information
+cargo run -- --verbose test.stdf
+
+# Display test data as DataFrames
+cargo run -- --df test.stdf
+```
+
+📖 **For comprehensive validation usage and examples, see [VALIDATION_GUIDE.md](VALIDATION_GUIDE.md)**
 
 # Installation
 
