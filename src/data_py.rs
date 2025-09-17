@@ -14,6 +14,7 @@ use crate::{
     data::{MasterInformation, Row, STDF, TestData, WaferInformation},
     records::records::*,
     test_information::TestInformation,
+    validation::{ValidationReport, ValidationIssue, ValidationLevel, validate_stdf_file},
 };
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
@@ -164,11 +165,54 @@ fn get_mir(fname: &str) -> PyResult<MIR> {
     Ok(mir)
 }
 
+/// validate_stdf(fname: str, strict: bool = False)
+/// --
+///
+/// Validate an STDF file for structural integrity and compliance
+///
+/// `fname` must be a `str` path to the STDF file.
+/// `strict` is an optional boolean for strict validation mode (default: False).
+///
+/// Returns a ValidationReport object with:
+///    `is_valid`: `bool` indicating if the file is valid
+///    `issues`: list of ValidationIssue objects describing any problems found
+///    `total_records`: `int` total number of records in the file
+///    `record_type_counts`: `dict` mapping record types to their counts
+///    `error_count`: `int` number of errors found
+///    `warning_count`: `int` number of warnings found
+///    `info_count`: `int` number of info messages
+///
+/// # Example
+/// ```
+///    import stupidf as sf
+///    report = sf.validate_stdf("my_stdf.stdf")
+///    if report.is_valid:
+///        print("File is valid!")
+///    else:
+///        print(f"Found {report.error_count} errors")
+///        for issue in report.issues:
+///            print(f"{issue.level}: {issue.message}")
+/// ````
+#[pyfunction]
+#[pyo3(signature = (fname, strict = false))]
+fn validate_stdf(fname: &str, strict: bool) -> PyResult<ValidationReport> {
+    let report = validate_stdf_file(fname, strict)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("{}", e)))?;
+    Ok(report)
+}
+
 #[pymodule]
 fn stupidf(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_mir, m)?)?;
     m.add_function(wrap_pyfunction!(parse_stdf, m)?)?;
     m.add_function(wrap_pyfunction!(get_rows, m)?)?;
     m.add_function(wrap_pyfunction!(get_raw_stdf, m)?)?;
+    m.add_function(wrap_pyfunction!(validate_stdf, m)?)?;
+    
+    // Add validation classes
+    m.add_class::<ValidationReport>()?;
+    m.add_class::<ValidationIssue>()?;
+    m.add_class::<ValidationLevel>()?;
+    
     Ok(())
 }

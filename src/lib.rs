@@ -26,4 +26,5 @@ pub mod data_py;
 pub mod record_types;
 pub mod records;
 pub mod test_information;
+pub mod validation;
 mod util;

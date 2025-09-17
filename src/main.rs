@@ -2,7 +2,7 @@ use clap::Parser;
 use std::env;
 
 use polars::frame::DataFrame;
-use stupidf::{data::STDF, test_information::FullTestInformation};
+use stupidf::{data::STDF, test_information::FullTestInformation, validation::validate_stdf_file};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -18,6 +18,15 @@ struct Cli {
     // print record summary information
     #[arg(short, long)]
     summarize: bool,
+
+    // validate STDF file structure and integrity
+    #[arg(long)]
+    validate: bool,
+
+    // use strict validation mode (more stringent checks)
+    #[arg(long)]
+    strict: bool,
+
     fname: String,
 }
 
@@ -35,8 +44,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let verbose = cli.verbose;
     let verbose_df = cli.df;
     let summarize = cli.summarize;
+    let validate = cli.validate;
+    let strict = cli.strict;
 
     polars_config();
+
+    // Handle validation mode
+    if validate {
+        match validate_stdf_file(&fname, strict) {
+            Ok(report) => {
+                println!("{}", report);
+                if !report.is_valid {
+                    std::process::exit(1);
+                }
+                return Ok(());
+            }
+            Err(e) => {
+                eprintln!("Validation failed: {}", e);
+                std::process::exit(1);
+            }
+        }
+    }
 
     if let Ok(stdf) = STDF::from_fname(&fname, verbose) {
         if verbose {
